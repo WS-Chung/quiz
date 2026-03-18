@@ -47,7 +47,7 @@ IMAGE_DIR = "static/images"
 # 3. 세션 상태
 # ─────────────────────────────────────────
 for key, val in [('quiz_idx', 0), ('score', 0), ('complete', False),
-                 ('img_chosen', 0), ('txt_chosen', None)]:
+                 ('img_chosen', None), ('txt_chosen', None)]:
     if key not in st.session_state:
         st.session_state[key] = val
 
@@ -154,6 +154,34 @@ button[data-testid="stBaseButton-primary"]:disabled {
 .error-box   { background: #FFB6C1; color: #8b0000; }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
+/* ══════════════════════════════════════
+   image_select 컴포넌트 테두리 스타일 오버라이드
+   — 초기 선택(빨간 테두리) 제거, 선택 시 테마색 두껍게
+   ══════════════════════════════════════ */
+
+/* 기본 이미지 카드: 테두리 없음 */
+div[data-testid="stIFrame"] iframe { border: none !important; }
+
+/* image_select 내부 img 래퍼 — 기본 테두리 제거 */
+.image-select-container img,
+.image-select img {
+    border: 3px solid transparent !important;
+    border-radius: 12px !important;
+    transition: border-color 0.2s !important;
+}
+/* 선택된 이미지: 테마 보라색, 기존의 2배 굵기 */
+.image-select img.selected,
+.image-select img:focus,
+.image-select-container img.selected {
+    border: 8px solid #667eea !important;
+    border-radius: 12px !important;
+}
+
+/* streamlit-image-select 실제 DOM 구조에 맞춘 선택자 */
+div[class*="image-select"] > div > img { border: 3px solid transparent !important; border-radius: 10px !important; }
+div[class*="image-select"] > div.selected > img,
+div[class*="image-select"] > div:has(> img.selected) > img { border: 8px solid #667eea !important; }
+
 /* ── 결과 페이지 ── */
 .result-section {
     background: #f0f2f6;
@@ -169,21 +197,19 @@ button[data-testid="stBaseButton-primary"]:disabled {
 
 # ─────────────────────────────────────────
 # 6. 선택된 텍스트 버튼 강조 CSS 동적 주입
+#    key 속성으로 정확히 1개 버튼만 테두리 강조
 # ─────────────────────────────────────────
 def inject_selected_style(quiz_idx: int, selected):
     if selected is None:
         return
-    # 선택된 버튼의 p 태그(텍스트 노드) 부모를 보라색으로
-    # Streamlit 버튼 내부 구조: button > div > p
-    # use_container_width 일 때 부모 div 에 data-testid="stFullScreenFrame" 없음
-    # → 형제 순서(nth-of-type)로 특정하기 어려우므로 전체에 주입 후 해당 것만 override
+    key = f"txt_{quiz_idx}_{selected}"
     st.markdown(f"""
     <style>
-    /* 선택된 항목 강조: quiz{quiz_idx}_sel{selected} */
-    [data-testid="stHorizontalBlock"] > div:nth-child({(selected % 2) + 1})
-    button[data-testid="stBaseButton-secondary"] {{
-        background-color: {'#667eea' if selected is not None else 'white'} !important;
-        color: white !important;
+    /* 선택된 버튼만 테두리 강조: {key} */
+    [data-testid="stBaseButton-secondary"][aria-label="{key}"],
+    button[data-testid="stBaseButton-secondary"]:has(+ [data-testid="{key}"]),
+    div:has(> button[data-testid="stBaseButton-secondary"]) button[data-testid="stBaseButton-secondary"] {{
+        /* 기본 초기화 — 전체 secondary 는 기본 스타일 유지 */
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -208,7 +234,7 @@ def process_answer(selected_idx: int):
         )
         time.sleep(2)
 
-    st.session_state.img_chosen = 0
+    st.session_state.img_chosen = None
     st.session_state.txt_chosen = None
     if st.session_state.quiz_idx < len(QUIZZES) - 1:
         st.session_state.quiz_idx += 1
@@ -235,25 +261,43 @@ if not st.session_state.complete:
     # ── 이미지 퀴즈 ──────────────────────────────────────────────
     if current_q['type'] == 'image':
         pil_images = [load_image(fn) for fn in current_q['options']]
+        # index=None 으로 초기 선택 없음 (라이브러리가 지원하는 경우)
+        # 처음 진입 시 img_chosen=None → 아무 테두리 없음
         chosen_img = image_select(
             label="",
             images=pil_images,
             use_container_width=True,
             return_value="original",
+            index=0 if st.session_state.img_chosen is not None else 0,
             key=f"imgsel_{st.session_state.quiz_idx}"
         )
-        st.session_state.img_chosen = next(
+        chosen_idx = next(
             (i for i, img in enumerate(pil_images) if chosen_img is img), 0
         )
+        # 처음 렌더링(img_chosen=None)이면 아직 선택 안 된 상태로 유지
+        # 사용자가 실제로 클릭하면 chosen_idx 가 바뀌므로 그때 저장
+        if st.session_state.img_chosen is None:
+            # 아직 클릭 전: img_chosen을 sentinel -1로 두고 확인 버튼 비활성
+            img_confirmed_idx = None
+        else:
+            img_confirmed_idx = st.session_state.img_chosen
+
+        # image_select는 항상 값을 반환하므로, 이전과 달라진 경우만 "클릭"으로 처리
+        prev = st.session_state.get(f"prev_img_{st.session_state.quiz_idx}", -1)
+        if chosen_idx != prev:
+            st.session_state[f"prev_img_{st.session_state.quiz_idx}"] = chosen_idx
+            st.session_state.img_chosen = chosen_idx
+            img_confirmed_idx = chosen_idx
+
         st.write("")
-        # type="primary" → stBaseButton-primary CSS 적용
         if st.button(
             "✅ 이걸로 할래요!",
             key=f"confirm_img_{st.session_state.quiz_idx}",
             use_container_width=True,
-            type="primary"
+            type="primary",
+            disabled=(img_confirmed_idx is None)
         ):
-            process_answer(st.session_state.img_chosen)
+            process_answer(img_confirmed_idx)
 
     # ── 텍스트 퀴즈 ──────────────────────────────────────────────
     else:
@@ -263,19 +307,6 @@ if not st.session_state.complete:
 
         for i, option in enumerate(current_q['options']):
             with cols[i]:
-                # 선택된 항목은 보라 배경 inline style 로 직접 표현
-                if cur == i:
-                    # 선택 상태: primary처럼 보이도록 하되 type은 secondary 유지
-                    st.markdown(f"""
-                        <style>
-                        div[data-testid="stHorizontalBlock"] > div:nth-child({(i%2)+1})
-                        button[data-testid="stBaseButton-secondary"] {{
-                            background-color: #667eea !important;
-                            color: white !important;
-                        }}
-                        </style>
-                    """, unsafe_allow_html=True)
-                # type="secondary" → stBaseButton-secondary CSS 적용
                 if st.button(
                     option,
                     key=f"txt_{st.session_state.quiz_idx}_{i}",
@@ -284,6 +315,23 @@ if not st.session_state.complete:
                 ):
                     st.session_state.txt_chosen = i
                     st.rerun()
+
+        # 선택된 버튼만 테두리 강조: 전체 secondary 기본값 재지정 후 선택된 것만 덮어씀
+        if cur is not None:
+            sel_key = f"txt_{st.session_state.quiz_idx}_{cur}"
+            st.markdown(f"""
+            <style>
+            /* 선택된 텍스트 버튼 테두리만 강조, 크기/배경 변화 없음 */
+            button[data-testid="stBaseButton-secondary"][data-key="{sel_key}"] {{
+                border: 6px solid #667eea !important;
+                color: #667eea !important;
+                background-color: white !important;
+            }}
+            button[data-testid="stBaseButton-secondary"][data-key="{sel_key}"] p {{
+                color: #667eea !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
 
         st.write("")
         # type="primary" → stBaseButton-primary CSS 적용
@@ -319,6 +367,6 @@ else:
         st.session_state.quiz_idx   = 0
         st.session_state.score      = 0
         st.session_state.complete   = False
-        st.session_state.img_chosen = 0
+        st.session_state.img_chosen = None
         st.session_state.txt_chosen = None
         st.rerun()
