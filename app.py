@@ -41,13 +41,15 @@ QUIZZES = [
 IMAGE_DIR = "static/images"
 
 # --- 3. 세션 상태 초기화 ---
-for key, val in [('quiz_idx', 0), ('score', 0), ('complete', False), ('img_chosen_idx', None)]:
+for key, val in [('quiz_idx', 0), ('score', 0), ('complete', False),
+                 ('img_chosen_idx', None), ('txt_chosen_idx', None)]:
     if key not in st.session_state:
         st.session_state[key] = val
 
 # --- 4. CSS ---
 st.markdown("""
 <style>
+/* ── 전체 레이아웃 ── */
 .main .block-container {
     display: flex;
     flex-direction: column;
@@ -56,18 +58,23 @@ st.markdown("""
     max-width: 720px;
     margin: 0 auto;
 }
+
+/* ── 풍선 크기 절반 ── */
 iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important;
     transform-origin: center center !important;
 }
 
-/* 텍스트 선택지 버튼 */
+/* ══════════════════════════════════════════
+   텍스트 선택지 버튼
+   이미지 카드(300×220)와 동일한 비율로 맞춤
+   ══════════════════════════════════════════ */
 div[data-testid="stButton"] > button {
     width: 100% !important;
-    height: 120px !important;
-    font-size: 28px !important;
+    height: 220px !important;          /* 이미지 카드 높이와 동일 */
+    font-size: 34px !important;        /* 박스가 커진 만큼 텍스트도 확대 */
     font-weight: bold !important;
-    border-radius: 20px !important;
+    border-radius: 16px !important;
     border: 4px solid #667eea !important;
     background-color: white !important;
     color: #667eea !important;
@@ -77,22 +84,37 @@ div[data-testid="stButton"] > button {
     line-height: 1.3 !important;
 }
 div[data-testid="stButton"] > button:hover {
+    background-color: #eff1ff !important;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(102,126,234,0.3);
+}
+/* 선택된 텍스트 항목 강조 (선택 후 rerun 전까지) */
+div[data-testid="stButton"] > button.selected-txt {
     background-color: #667eea !important;
     color: white !important;
-    transform: translateY(-4px);
-    box-shadow: 0 10px 20px rgba(102,126,234,0.4);
 }
 
-/* 이미지 퀴즈 전용 확인 버튼 — 더 크고 눈에 띄게 */
+/* ══════════════════════════════════════════
+   "이걸로 할래요!" 확인 버튼
+   — 가운데 정렬, 좌우 2배 폭, 텍스트 1.5배
+   ══════════════════════════════════════════ */
+.confirm-wrap {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 16px;
+}
 .confirm-wrap div[data-testid="stButton"] > button {
+    width: 480px !important;           /* 좌우로 충분히 넓게 */
     height: 80px !important;
-    font-size: 30px !important;
+    font-size: 33px !important;        /* 기존 대비 약 1.5배 */
+    font-weight: bold !important;
     border-radius: 40px !important;
     background-color: #667eea !important;
     color: white !important;
     border: none !important;
     box-shadow: 0 6px 18px rgba(102,126,234,0.45);
-    margin-top: 8px !important;
+    transition: all 0.25s ease;
 }
 .confirm-wrap div[data-testid="stButton"] > button:hover {
     background-color: #5a6fd6 !important;
@@ -100,7 +122,9 @@ div[data-testid="stButton"] > button:hover {
     box-shadow: 0 10px 24px rgba(102,126,234,0.55);
 }
 
-/* 결과 메시지 박스 */
+/* ══════════════════════════════════════════
+   결과 메시지 박스
+   ══════════════════════════════════════════ */
 .result-msg-box {
     padding: 22px;
     border-radius: 20px;
@@ -115,7 +139,9 @@ div[data-testid="stButton"] > button:hover {
 .error-box   { background-color: #FFB6C1; color: #8b0000; }
 @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
 
-/* 결과 페이지 */
+/* ══════════════════════════════════════════
+   결과 페이지
+   ══════════════════════════════════════════ */
 .result-section {
     background-color: #f0f2f6;
     border-radius: 20px;
@@ -125,6 +151,8 @@ div[data-testid="stButton"] > button:hover {
     text-align: center;
 }
 .result-text { font-weight: bold; color: #333; }
+
+/* "처음부터 다시하기" — 가운데, 2배 폭, 텍스트 1.5배 */
 .restart-wrap {
     display: flex;
     justify-content: center;
@@ -132,10 +160,41 @@ div[data-testid="stButton"] > button:hover {
     margin-top: 10px;
 }
 .restart-wrap div[data-testid="stButton"] > button {
-    height: 70px !important;
-    font-size: 22px !important;
-    width: 280px !important;
-    border-radius: 35px !important;
+    width: 480px !important;           /* 좌우 2배 확대 */
+    height: 80px !important;
+    font-size: 33px !important;        /* 텍스트 1.5배 */
+    font-weight: bold !important;
+    border-radius: 40px !important;
+    background-color: #667eea !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 6px 18px rgba(102,126,234,0.45);
+}
+.restart-wrap div[data-testid="stButton"] > button:hover {
+    background-color: #5a6fd6 !important;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(102,126,234,0.55);
+}
+
+/* ══════════════════════════════════════════
+   선택된 텍스트 버튼 강조용 커스텀 박스
+   ══════════════════════════════════════════ */
+.txt-selected-box {
+    width: 100%;
+    height: 220px;
+    border-radius: 16px;
+    border: 4px solid #667eea;
+    background-color: #667eea;
+    color: white;
+    font-size: 34px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    word-break: keep-all;
+    line-height: 1.3;
+    box-sizing: border-box;
+    padding: 8px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -161,13 +220,12 @@ if not st.session_state.complete:
         unsafe_allow_html=True
     )
 
-    selected_idx = None   # 최종 확정된 선택
+    selected_idx = None   # 확인 버튼 눌렸을 때 최종 확정값
 
     # ── 이미지 퀴즈 ──────────────────────────────────────────────
     if current_q['type'] == 'image':
         pil_images = [load_image(fn) for fn in current_q['options']]
 
-        # image_select: 클릭 시 해당 PIL Image 반환 (기본값 = 첫 번째 이미지)
         chosen_img = image_select(
             label="",
             images=pil_images,
@@ -176,14 +234,12 @@ if not st.session_state.complete:
             key=f"imgsel_{st.session_state.quiz_idx}"
         )
 
-        # 현재 선택된 이미지의 인덱스 파악
-        current_chosen_idx = next(
+        # 현재 선택 인덱스를 세션에 보관
+        st.session_state.img_chosen_idx = next(
             (i for i, img in enumerate(pil_images) if chosen_img is img), 0
         )
-        # 세션에 저장 (확인 버튼 누르기 전까지 대기)
-        st.session_state.img_chosen_idx = current_chosen_idx
 
-        # 확인 버튼 — 클릭해야 비로소 정답 처리
+        # ── 확인 버튼 (가운데 정렬, 넓게) ──
         st.markdown('<div class="confirm-wrap">', unsafe_allow_html=True)
         if st.button("✅ 이걸로 할래요!", key=f"confirm_{st.session_state.quiz_idx}"):
             selected_idx = st.session_state.img_chosen_idx
@@ -193,11 +249,28 @@ if not st.session_state.complete:
     else:
         col1, col2 = st.columns(2)
         cols = [col1, col2, col1, col2]
+        cur_txt = st.session_state.txt_chosen_idx  # 현재 선택(미확정)
+
         for i, option in enumerate(current_q['options']):
             with cols[i]:
-                st.write("")
-                if st.button(option, key=f"txt_{st.session_state.quiz_idx}_{i}"):
-                    selected_idx = i
+                if cur_txt == i:
+                    # 선택된 항목 → 보라색 강조 박스로 표시
+                    st.markdown(
+                        f'<div class="txt-selected-box">{option}</div>',
+                        unsafe_allow_html=True
+                    )
+                else:
+                    # 미선택 항목 → 일반 버튼
+                    if st.button(option, key=f"txt_{st.session_state.quiz_idx}_{i}"):
+                        st.session_state.txt_chosen_idx = i
+                        st.rerun()
+
+        # ── 확인 버튼: 항목을 하나라도 골랐을 때만 표시 ──
+        if cur_txt is not None:
+            st.markdown('<div class="confirm-wrap">', unsafe_allow_html=True)
+            if st.button("✅ 이걸로 할래요!", key=f"confirm_txt_{st.session_state.quiz_idx}"):
+                selected_idx = st.session_state.txt_chosen_idx
+            st.markdown('</div>', unsafe_allow_html=True)
 
     # ── 선택 처리 ─────────────────────────────────────────────────
     if selected_idx is not None:
@@ -216,7 +289,9 @@ if not st.session_state.complete:
             )
             time.sleep(2)
 
+        # 다음 문제로
         st.session_state.img_chosen_idx = None
+        st.session_state.txt_chosen_idx = None
         if st.session_state.quiz_idx < len(QUIZZES) - 1:
             st.session_state.quiz_idx += 1
         else:
@@ -242,5 +317,6 @@ else:
         st.session_state.score          = 0
         st.session_state.complete       = False
         st.session_state.img_chosen_idx = None
+        st.session_state.txt_chosen_idx = None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
