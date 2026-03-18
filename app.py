@@ -100,8 +100,8 @@ button[data-testid="stBaseButton-secondary"][kind="secondary"]:not([data-key^="c
    ══════════════════════════════════════ */
 button[data-testid="stBaseButton-secondary"][data-key^="confirm"],
 button[data-testid="stBaseButton-secondary"][data-key="restart"] {
-    height: 100px !important;
-    font-size: 38px !important;
+    height: 120px !important;
+    font-size: 76px !important;
     font-weight: bold !important;
     border-radius: 50px !important;
     border: none !important;
