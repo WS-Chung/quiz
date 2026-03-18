@@ -1,12 +1,17 @@
 import streamlit as st
 import time
-import base64
 import os
+from PIL import Image
 
 # --- 1. 페이지 설정 및 제목 ---
 st.set_page_config(page_title="정연이 정우 퀴즈풀기", page_icon="⭐", layout="centered")
 
-# --- 2. 퀴즈 데이터 정의 (기존 데이터 유지) ---
+# --- 2. 경로 보정 (클라우드 서버용) ---
+# 현재 실행 중인 파일의 절대 경로를 기준으로 이미지를 찾습니다.
+current_path = os.path.dirname(__file__)
+img_dir = os.path.join(current_path, 'static', 'images')
+
+# --- 3. 퀴즈 데이터 정의 ---
 QUIZZES = [
     {'id': 1, 'type': 'image', 'title': '불을 끄는 소방관이 타고 다니는 차는 뭘까?', 'options': ['police.jpg', '119.jpg', 'kids.jpg', 'truck.jpg'], 'correct_index': 1, 'success': '딩동댕! 🎉 소방차를 어떻게 알았지?', 'failure': '땡! 소방차는 빨간색이야!'},
     {'id': 2, 'type': 'image', 'title': '이 중에 왕자핑이 누구~게?', 'options': ['princeping.jpg', 'auroraping.jpg', 'heartsping.jpg', 'fixping.jpg'], 'correct_index': 0, 'success': '맞았어! 🎉 왕자핑을 잘 찾았어', 'failure': '땡! 왕자핑은 남자아이야!'},
@@ -17,115 +22,64 @@ QUIZZES = [
     {'id': 7, 'type': 'text', 'title': '밖에서 놀고 집에오면 뭐부터 해야할까?', 'options': ['과자 먹기', '유튜브 보기', '손씻기', '춤추기'], 'correct_index': 2, 'success': '딩동댕! 🎉 손을 깨끗이 씻자!', 'failure': '땡! 손 안 씻으면 아야해요!'}
 ]
 
-# --- 3. 세션 상태 초기화 (기억 장치) ---
 if 'quiz_idx' not in st.session_state:
     st.session_state.quiz_idx, st.session_state.score, st.session_state.complete = 0, 0, False
 
-# --- 4. 강력한 커스텀 CSS 적용 (가장 중요 ⭐) ---
+# --- 4. 강력한 커스텀 CSS (이미지 버튼 전용) ---
 st.markdown("""
     <style>
-    /* 전체 컨텐츠 중앙 정렬 고정 */
+    /* 전체 중앙 정렬 */
     .main .block-container {
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
         text-align: center;
     }
 
-    /* 텍스트 퀴즈 버튼: 규격화된 카드 디자인 (크기 동일 고정, 텍스트 크게) */
+    /* 텍스트 버튼 및 이미지 하단 버튼 공통 스타일 */
     div.stButton > button {
         width: 100% !important;
-        height: 150px !important;  /* 버튼 높이 고정 */
-        font-size: 35px !important; /* 텍스트 크게 */
+        height: 100px !important;
+        font-size: 30px !important;
         font-weight: bold !important;
-        border-radius: 20px !important;
+        border-radius: 15px !important;
         border: 4px solid #667eea !important;
         background-color: white !important;
         color: #667eea !important;
-        transition: all 0.3s ease;
-    }
-    div.stButton > button:hover {
-        background-color: #667eea !important;
-        color: white !important;
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        margin-top: 0px !important;
     }
 
-    /* 이미지 퀴즈: 클릭 가능한 카드 구조 */
-    .image-choice-card {
-        position: relative;
-        width: 100%;
-        height: 350px; /* 카드 높이 고정 (이미지+투명버튼 높이) */
-        border-radius: 20px;
-        overflow: hidden;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border: 4px solid #667eea;
-        box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
-    }
-    .image-choice-card:hover {
-        transform: scale(1.05);
-        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+    /* 이미지 스타일 */
+    .stImage > img {
+        border-radius: 15px 15px 0 0 !important;
+        border: 4px solid #667eea !important;
+        border-bottom: none !important;
     }
 
-    /* 카드의 이미지 */
-    .quiz-img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    /* 이미지 위에 투명하게 덮어씌울 진짜 버튼 (텍스트 제거) */
-    .choice-container .stButton {
-        position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        opacity: 0 !important; /* 투명하게 */
-        z-index: 2; /* 이미지 위로 */
-        cursor: pointer !important;
-    }
-
-    /* 투명 버튼의 실제 클릭 영역 확보 */
-    .choice-container .stButton button {
-        height: 100% !important;
-        border: none !important;
-    }
-
-    /* 결과 메시지 중앙 정렬 박스 */
+    /* 결과 박스 중앙 정렬 */
     .result-box {
-        padding: 20px;
+        padding: 25px;
         border-radius: 20px;
-        font-size: 30px;
+        font-size: 28px;
         font-weight: bold;
-        margin: 20px auto;
+        margin: 20px 0;
         width: 100%;
         text-align: center;
-        animation: fadeIn 0.5s;
     }
-    .correct-box { background-color: #90EE90; color: #2d5016; }
-    .error-box { background-color: #FFB6C1; color: #8b0000; }
-
-    @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+    .correct { background-color: #90EE90; color: #2d5016; }
+    .error { background-color: #FFB6C1; color: #8b0000; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 5. 화면 구성 및 로직 ---
-# 제목 중앙 배치
-st.markdown(f"<h1 style='text-align: center; color: #667eea;'>정연이 정우 퀴즈풀기</h1>", unsafe_allow_html=True)
+# 제목
+st.markdown("<h1 style='text-align: center; color: #667eea;'>정연이 정우 퀴즈풀기</h1>", unsafe_allow_html=True)
 
 if not st.session_state.complete:
     current_q = QUIZZES[st.session_state.quiz_idx]
-    
-    # 진행바
     st.progress((st.session_state.quiz_idx) / len(QUIZZES))
-    
-    # 문제 제목 중앙 정렬
-    st.markdown(f"<h3 style='text-align: center;'>Q{st.session_state.quiz_idx + 1}. {current_q['title']}</h3>", unsafe_allow_html=True)
+    st.markdown(f"### Q{st.session_state.quiz_idx + 1}. {current_q['title']}")
 
-    # 4지 선다형 레이아웃 (2x2 그리드)
+    # 2x2 그리드
     col1, col2 = st.columns(2)
     cols = [col1, col2, col1, col2]
     
@@ -134,37 +88,34 @@ if not st.session_state.complete:
     for i, option in enumerate(current_q['options']):
         with cols[i]:
             if current_q['type'] == 'image':
-                # 이미지 자체를 클릭 가능한 카드로 만듦 (핵심 수정 ⭐)
-                st.markdown(f'''
-                    <div class="image-choice-card">
-                        <img src="app/static/images/{option}" class="quiz-img">
-                    </div>
-                ''', unsafe_allow_html=True)
+                # [이미지 로드 방식 개선] 엑스박스 방지를 위해 파일 존재 여부 확인 후 로드
+                img_path = os.path.join(img_dir, option)
+                try:
+                    image = Image.open(img_path)
+                    st.image(image, use_container_width=True)
+                except:
+                    st.error(f"이미지 없음: {option}")
                 
-                # 이미지 위에 투명한 버튼을 올려서 클릭을 인식함 (텍스트 제거 "")
-                with st.container(border=False):
-                    st.markdown(f'<div class="choice-container" id="choice-{i}">', unsafe_allow_html=True)
-                    if st.button("", key=f"img_btn_{i}"):
-                        selected_idx = i
-                    st.markdown('</div>', unsafe_allow_html=True)
-
+                # 이미지 바로 아래에 텍스트 없는 빈 버튼 배치 (이미지 클릭 효과)
+                if st.button(" ", key=f"img_btn_{i}"):
+                    selected_idx = i
             else:
-                # 텍스트 퀴즈 버튼 (CSS로 크기/글자 규격화 완료)
+                # 텍스트 퀴즈 버튼
+                st.write("") # 간격 맞춤용
                 if st.button(option, key=f"txt_btn_{i}"):
                     selected_idx = i
 
-    # 정답 체크 및 결과 표시 (중앙 정렬 커스텀 메시지)
+    # 정답 체크 로직
     if selected_idx is not None:
         if selected_idx == current_q['correct_index']:
-            st.markdown(f'<div class="result-box correct-box">{current_q["success"]}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="result-box correct">{current_q["success"]}</div>', unsafe_allow_html=True)
             st.balloons()
             st.session_state.score += 1
             time.sleep(2)
         else:
-            st.markdown(f'<div class="result-box error-box">{current_q["failure"]}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="result-box error">{current_q["failure"]}</div>', unsafe_allow_html=True)
             time.sleep(2)
         
-        # 다음 문제로 이동
         if st.session_state.quiz_idx < len(QUIZZES) - 1:
             st.session_state.quiz_idx += 1
         else:
@@ -172,9 +123,8 @@ if not st.session_state.complete:
         st.rerun()
 
 else:
-    # 모든 퀴즈 완료 화면
     st.balloons()
-    st.markdown(f'<div class="result-box correct-box">모든 퀴즈 끝! 정말 잘했어! 🌟<br> {len(QUIZZES)}문제 중 {st.session_state.score}개 정답!</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="result-box correct">모든 퀴즈 끝! 정말 잘했어! 🌟<br>{len(QUIZZES)}문제 중 {st.session_state.score}개 정답!</div>', unsafe_allow_html=True)
     if st.button("처음부터 다시 하기"):
         st.session_state.quiz_idx, st.session_state.score, st.session_state.complete = 0, 0, False
         st.rerun()
