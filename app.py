@@ -113,16 +113,12 @@ iframe[title="st_balloons.balloons"] {
        .confirm-area 안의 버튼만 적용
    ══════════════════════════════════════ */
 .confirm-area {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-    margin-top: 20px;
+    margin-top: 24px;
 }
 .confirm-area div[data-testid="stButton"] > button {
-    width: 500px !important;
-    max-width: 92vw !important;
-    height: 72px !important;
-    font-size: 32px !important;
+    width: 100% !important;
+    height: 144px !important;
+    font-size: 51px !important;
     font-weight: bold !important;
     border-radius: 40px !important;
     border: none !important;
@@ -234,11 +230,13 @@ if not st.session_state.complete:
             (i for i, img in enumerate(pil_images) if chosen_img is img), 0
         )
 
-        # ── 확인 버튼 (.confirm-area 로 격리) ──
-        st.markdown('<div class="confirm-area">', unsafe_allow_html=True)
-        if st.button("✅ 이걸로 할래요!", key=f"confirm_img_{st.session_state.quiz_idx}"):
-            process_answer(st.session_state.img_chosen)
-        st.markdown('</div>', unsafe_allow_html=True)
+        # ── 확인 버튼: 가운데 열에 배치 ──
+        _, center, _ = st.columns([1, 4, 1])
+        with center:
+            st.markdown('<div class="confirm-area">', unsafe_allow_html=True)
+            if st.button("✅ 이걸로 할래요!", key=f"confirm_img_{st.session_state.quiz_idx}"):
+                process_answer(st.session_state.img_chosen)
+            st.markdown('</div>', unsafe_allow_html=True)
 
     # ══════════════════════════════════════
     # 텍스트 퀴즈
@@ -259,15 +257,16 @@ if not st.session_state.complete:
             st.markdown('</div>', unsafe_allow_html=True)
 
         # ── 확인 버튼 (항상 표시, 미선택시 비활성) ──
-        st.markdown('<div class="confirm-area">', unsafe_allow_html=True)
-        # st.button 은 disabled 파라미터 지원
-        if st.button(
-            "✅ 이걸로 할래요!",
-            key=f"confirm_txt_{st.session_state.quiz_idx}",
-            disabled=(cur is None)
-        ):
-            process_answer(cur)
-        st.markdown('</div>', unsafe_allow_html=True)
+        _, center, _ = st.columns([1, 4, 1])
+        with center:
+            st.markdown('<div class="confirm-area">', unsafe_allow_html=True)
+            if st.button(
+                "✅ 이걸로 할래요!",
+                key=f"confirm_txt_{st.session_state.quiz_idx}",
+                disabled=(cur is None)
+            ):
+                process_answer(cur)
+            st.markdown('</div>', unsafe_allow_html=True)
 
 # ══════════════════════════════════════════
 # 결과 페이지
@@ -284,12 +283,14 @@ else:
         </div>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="confirm-area">', unsafe_allow_html=True)
-    if st.button("처음부터 다시 하기 🔄", key="restart"):
-        st.session_state.quiz_idx   = 0
-        st.session_state.score      = 0
-        st.session_state.complete   = False
-        st.session_state.img_chosen = 0
-        st.session_state.txt_chosen = None
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    _, center, _ = st.columns([1, 4, 1])
+    with center:
+        st.markdown('<div class="confirm-area">', unsafe_allow_html=True)
+        if st.button("처음부터 다시 하기 🔄", key="restart"):
+            st.session_state.quiz_idx   = 0
+            st.session_state.score      = 0
+            st.session_state.complete   = False
+            st.session_state.img_chosen = 0
+            st.session_state.txt_chosen = None
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
