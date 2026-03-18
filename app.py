@@ -96,6 +96,11 @@ button[data-testid="stBaseButton-secondary"] {
     line-height: 1.3 !important;
     transition: background 0.2s, transform 0.2s !important;
 }
+button[data-testid="stBaseButton-secondary"] p {
+    font-size: 28px !important;
+    font-weight: bold !important;
+    line-height: 1.3 !important;
+}
 button[data-testid="stBaseButton-secondary"]:hover {
     background-color: #eff1ff !important;
     transform: translateY(-3px) !important;
@@ -103,7 +108,7 @@ button[data-testid="stBaseButton-secondary"]:hover {
 
 /* ══════════════════════════════════════
    [B] 확인 버튼 & 다시하기 버튼 — primary
-   ★ 글자 크기를 바꾸려면 아래 font-size 를 수정하세요 ★
+   ★ 글자 크기: 아래 font-size 두 곳을 같이 수정 ★
    ══════════════════════════════════════ */
 button[data-testid="stBaseButton-primary"] {
     height: 120px !important;
@@ -117,6 +122,10 @@ button[data-testid="stBaseButton-primary"] {
     transition: background 0.2s, transform 0.2s, box-shadow 0.2s !important;
     white-space: normal !important;
     line-height: 1.3 !important;
+}
+button[data-testid="stBaseButton-primary"] p {
+    font-size: 28px !important;
+    font-weight: bold !important;
 }
 button[data-testid="stBaseButton-primary"]:hover {
     background-color: #5a6fd6 !important;
