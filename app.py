@@ -60,7 +60,7 @@ def load_image(filename: str) -> Image.Image:
     return img.resize((300, 220), Image.LANCZOS)
 
 # ─────────────────────────────────────────
-# 5. CSS  — 버튼을 data-testid + nth-child 로 격리
+# 5. CSS — data-testid="stBaseButton-secondary" + key 속성으로 직접 선택
 # ─────────────────────────────────────────
 st.markdown("""
 <style>
@@ -78,11 +78,10 @@ iframe[title="st_balloons.balloons"] {
 }
 
 /* ══════════════════════════════════════
-   [A] 텍스트 선택지 버튼
-       .txt-option-area 안의 버튼만 적용
+   텍스트 선택지 버튼
+   key 가 "txt_" 로 시작하는 버튼만 적용
    ══════════════════════════════════════ */
-.txt-option-area div[data-testid="stButton"] > button {
-    width: 100% !important;
+button[data-testid="stBaseButton-secondary"][kind="secondary"]:not([data-key^="confirm"]):not([data-key="restart"]) {
     height: 220px !important;
     font-size: 36px !important;
     font-weight: bold !important;
@@ -93,52 +92,42 @@ iframe[title="st_balloons.balloons"] {
     white-space: normal !important;
     word-break: keep-all !important;
     line-height: 1.3 !important;
-    transition: background 0.2s, color 0.2s, transform 0.2s !important;
-}
-.txt-option-area div[data-testid="stButton"] > button:hover {
-    background-color: #eff1ff !important;
-    transform: translateY(-3px) !important;
-    box-shadow: 0 8px 20px rgba(102,126,234,0.25) !important;
-}
-
-/* 선택된 텍스트 항목 강조 */
-.txt-selected div[data-testid="stButton"] > button {
-    background-color: #667eea !important;
-    color: white !important;
-    box-shadow: 0 6px 16px rgba(102,126,234,0.45) !important;
 }
 
 /* ══════════════════════════════════════
-   [B] 확인 버튼 / 다시하기 버튼
-       .confirm-area 안의 버튼만 적용
+   확인 버튼 & 다시하기 버튼
+   key 가 "confirm" 으로 시작하거나 "restart" 인 버튼
    ══════════════════════════════════════ */
-.confirm-area {
-    margin-top: 24px;
-}
-.confirm-area div[data-testid="stButton"] > button {
-    width: 100% !important;
-    height: 144px !important;
-    font-size: 51px !important;
+button[data-testid="stBaseButton-secondary"][data-key^="confirm"],
+button[data-testid="stBaseButton-secondary"][data-key="restart"] {
+    height: 100px !important;
+    font-size: 38px !important;
     font-weight: bold !important;
-    border-radius: 40px !important;
+    border-radius: 50px !important;
     border: none !important;
     background-color: #667eea !important;
     color: white !important;
     box-shadow: 0 6px 18px rgba(102,126,234,0.45) !important;
-    transition: background 0.2s, transform 0.2s, box-shadow 0.2s !important;
+    margin-top: 8px !important;
 }
-.confirm-area div[data-testid="stButton"] > button:hover {
+button[data-testid="stBaseButton-secondary"][data-key^="confirm"]:hover,
+button[data-testid="stBaseButton-secondary"][data-key="restart"]:hover {
     background-color: #5a6fd6 !important;
     transform: translateY(-3px) !important;
     box-shadow: 0 10px 24px rgba(102,126,234,0.55) !important;
 }
-
-/* 비활성 확인 버튼 */
-.confirm-area div[data-testid="stButton"] > button:disabled {
+button[data-testid="stBaseButton-secondary"][data-key^="confirm"]:disabled {
     background-color: #b0b8f0 !important;
     cursor: not-allowed !important;
     transform: none !important;
     box-shadow: none !important;
+}
+
+/* ── 선택된 텍스트 항목 강조 ── */
+button[data-testid="stBaseButton-secondary"].txt-selected-btn {
+    background-color: #667eea !important;
+    color: white !important;
+    box-shadow: 0 6px 16px rgba(102,126,234,0.45) !important;
 }
 
 /* ── 결과 메시지 ── */
@@ -163,8 +152,12 @@ iframe[title="st_balloons.balloons"] {
     padding: 40px 30px;
     width: 100%;
     text-align: center;
+    margin-bottom: 20px;
 }
 .result-text { font-weight: bold; color: #333; }
+
+/* 선택된 텍스트 버튼 강조 — JS로 클래스 추가가 안 되므로
+   세션 기반으로 inline style 주입 방식 사용 (아래 Python 에서 처리) */
 </style>
 """, unsafe_allow_html=True)
 
@@ -197,7 +190,25 @@ def process_answer(selected_idx: int):
     st.rerun()
 
 # ─────────────────────────────────────────
-# 7. 메인 화면
+# 7. 선택된 텍스트 버튼 강조용 동적 CSS 주입
+# ─────────────────────────────────────────
+def inject_selected_style(quiz_idx: int, selected: int | None):
+    """선택된 텍스트 버튼 key 를 보라색으로 강조하는 CSS를 동적으로 주입"""
+    if selected is None:
+        return
+    key = f"txt_{quiz_idx}_{selected}"
+    st.markdown(f"""
+    <style>
+    button[data-testid="stBaseButton-secondary"][data-key="{key}"] {{
+        background-color: #667eea !important;
+        color: white !important;
+        box-shadow: 0 6px 16px rgba(102,126,234,0.45) !important;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+# ─────────────────────────────────────────
+# 8. 메인 화면
 # ─────────────────────────────────────────
 st.markdown(
     "<h1 style='text-align:center;color:#667eea;'>정연이 정우 퀴즈풀기 ⭐</h1>",
@@ -225,48 +236,49 @@ if not st.session_state.complete:
             return_value="original",
             key=f"imgsel_{st.session_state.quiz_idx}"
         )
-        # 현재 선택 인덱스 파악 및 저장
         st.session_state.img_chosen = next(
             (i for i, img in enumerate(pil_images) if chosen_img is img), 0
         )
 
-        # ── 확인 버튼: 가운데 열에 배치 ──
-        _, center, _ = st.columns([1, 4, 1])
-        with center:
-            st.markdown('<div class="confirm-area">', unsafe_allow_html=True)
-            if st.button("✅ 이걸로 할래요!", key=f"confirm_img_{st.session_state.quiz_idx}"):
-                process_answer(st.session_state.img_chosen)
-            st.markdown('</div>', unsafe_allow_html=True)
+        # 확인 버튼 — use_container_width=True 로 전체 너비 채움
+        st.write("")
+        if st.button(
+            "✅ 이걸로 할래요!",
+            key=f"confirm_img_{st.session_state.quiz_idx}",
+            use_container_width=True
+        ):
+            process_answer(st.session_state.img_chosen)
 
     # ══════════════════════════════════════
     # 텍스트 퀴즈
     # ══════════════════════════════════════
     else:
         cur = st.session_state.txt_chosen
+
+        # 선택 강조 CSS 주입
+        inject_selected_style(st.session_state.quiz_idx, cur)
+
         col1, col2 = st.columns(2)
         cols = [col1, col2, col1, col2]
-
         for i, option in enumerate(current_q['options']):
-            # 선택된 항목은 .txt-selected 클래스로 감싸 강조
-            wrapper_class = "txt-option-area txt-selected" if cur == i else "txt-option-area"
-            st.markdown(f'<div class="{wrapper_class}">', unsafe_allow_html=True)
             with cols[i]:
-                if st.button(option, key=f"txt_{st.session_state.quiz_idx}_{i}"):
+                if st.button(
+                    option,
+                    key=f"txt_{st.session_state.quiz_idx}_{i}",
+                    use_container_width=True
+                ):
                     st.session_state.txt_chosen = i
                     st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
 
-        # ── 확인 버튼 (항상 표시, 미선택시 비활성) ──
-        _, center, _ = st.columns([1, 4, 1])
-        with center:
-            st.markdown('<div class="confirm-area">', unsafe_allow_html=True)
-            if st.button(
-                "✅ 이걸로 할래요!",
-                key=f"confirm_txt_{st.session_state.quiz_idx}",
-                disabled=(cur is None)
-            ):
-                process_answer(cur)
-            st.markdown('</div>', unsafe_allow_html=True)
+        # 확인 버튼
+        st.write("")
+        if st.button(
+            "✅ 이걸로 할래요!",
+            key=f"confirm_txt_{st.session_state.quiz_idx}",
+            use_container_width=True,
+            disabled=(cur is None)
+        ):
+            process_answer(cur)
 
 # ══════════════════════════════════════════
 # 결과 페이지
@@ -283,14 +295,11 @@ else:
         </div>
     """, unsafe_allow_html=True)
 
-    _, center, _ = st.columns([1, 4, 1])
-    with center:
-        st.markdown('<div class="confirm-area">', unsafe_allow_html=True)
-        if st.button("처음부터 다시 하기 🔄", key="restart"):
-            st.session_state.quiz_idx   = 0
-            st.session_state.score      = 0
-            st.session_state.complete   = False
-            st.session_state.img_chosen = 0
-            st.session_state.txt_chosen = None
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+    st.write("")
+    if st.button("처음부터 다시 하기 🔄", key="restart", use_container_width=True):
+        st.session_state.quiz_idx   = 0
+        st.session_state.score      = 0
+        st.session_state.complete   = False
+        st.session_state.img_chosen = 0
+        st.session_state.txt_chosen = None
+        st.rerun()
