@@ -41,7 +41,7 @@ QUIZZES = [
 IMAGE_DIR = "static/images"
 
 # --- 3. 세션 상태 초기화 ---
-for key, val in [('quiz_idx', 0), ('score', 0), ('complete', False), ('last_selected', -1)]:
+for key, val in [('quiz_idx', 0), ('score', 0), ('complete', False), ('img_chosen_idx', None)]:
     if key not in st.session_state:
         st.session_state[key] = val
 
@@ -60,6 +60,8 @@ iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important;
     transform-origin: center center !important;
 }
+
+/* 텍스트 선택지 버튼 */
 div[data-testid="stButton"] > button {
     width: 100% !important;
     height: 120px !important;
@@ -80,6 +82,25 @@ div[data-testid="stButton"] > button:hover {
     transform: translateY(-4px);
     box-shadow: 0 10px 20px rgba(102,126,234,0.4);
 }
+
+/* 이미지 퀴즈 전용 확인 버튼 — 더 크고 눈에 띄게 */
+.confirm-wrap div[data-testid="stButton"] > button {
+    height: 80px !important;
+    font-size: 30px !important;
+    border-radius: 40px !important;
+    background-color: #667eea !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 6px 18px rgba(102,126,234,0.45);
+    margin-top: 8px !important;
+}
+.confirm-wrap div[data-testid="stButton"] > button:hover {
+    background-color: #5a6fd6 !important;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(102,126,234,0.55);
+}
+
+/* 결과 메시지 박스 */
 .result-msg-box {
     padding: 22px;
     border-radius: 20px;
@@ -93,6 +114,8 @@ div[data-testid="stButton"] > button:hover {
 .correct-box { background-color: #90EE90; color: #2d5016; }
 .error-box   { background-color: #FFB6C1; color: #8b0000; }
 @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+
+/* 결과 페이지 */
 .result-section {
     background-color: #f0f2f6;
     border-radius: 20px;
@@ -117,12 +140,10 @@ div[data-testid="stButton"] > button:hover {
 </style>
 """, unsafe_allow_html=True)
 
-# --- 5. 이미지 로드 헬퍼 (PIL Image 객체 반환, 크기 통일) ---
+# --- 5. 이미지 로드 헬퍼 ---
 @st.cache_resource
 def load_image(filename: str) -> Image.Image:
-    path = f"{IMAGE_DIR}/{filename}"
-    img = Image.open(path).convert("RGB")
-    # 모든 이미지를 동일한 비율(300x220)로 리사이즈 → 카드 크기 통일
+    img = Image.open(f"{IMAGE_DIR}/{filename}").convert("RGB")
     img = img.resize((300, 220), Image.LANCZOS)
     return img
 
@@ -140,38 +161,36 @@ if not st.session_state.complete:
         unsafe_allow_html=True
     )
 
-    selected_idx = None
+    selected_idx = None   # 최종 확정된 선택
 
     # ── 이미지 퀴즈 ──────────────────────────────────────────────
     if current_q['type'] == 'image':
-        # PIL Image 객체 리스트로 변환
         pil_images = [load_image(fn) for fn in current_q['options']]
 
-        # image_select: 클릭하면 선택된 PIL Image 객체를 반환
+        # image_select: 클릭 시 해당 PIL Image 반환 (기본값 = 첫 번째 이미지)
         chosen_img = image_select(
             label="",
             images=pil_images,
             use_container_width=True,
-            return_value="original",      # PIL Image 반환
+            return_value="original",
             key=f"imgsel_{st.session_state.quiz_idx}"
         )
 
-        # 반환된 PIL Image가 몇 번째 옵션인지 인덱스로 변환
-        if chosen_img is not None:
-            for i, img in enumerate(pil_images):
-                if chosen_img is img:   # 동일 객체 비교
-                    chosen_idx = i
-                    break
-            else:
-                chosen_idx = -1
+        # 현재 선택된 이미지의 인덱스 파악
+        current_chosen_idx = next(
+            (i for i, img in enumerate(pil_images) if chosen_img is img), 0
+        )
+        # 세션에 저장 (확인 버튼 누르기 전까지 대기)
+        st.session_state.img_chosen_idx = current_chosen_idx
 
-            if chosen_idx != st.session_state.last_selected:
-                selected_idx = chosen_idx
-                st.session_state.last_selected = chosen_idx
+        # 확인 버튼 — 클릭해야 비로소 정답 처리
+        st.markdown('<div class="confirm-wrap">', unsafe_allow_html=True)
+        if st.button("✅ 이걸로 할래요!", key=f"confirm_{st.session_state.quiz_idx}"):
+            selected_idx = st.session_state.img_chosen_idx
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # ── 텍스트 퀴즈 ──────────────────────────────────────────────
     else:
-        st.session_state.last_selected = -1
         col1, col2 = st.columns(2)
         cols = [col1, col2, col1, col2]
         for i, option in enumerate(current_q['options']):
@@ -197,7 +216,7 @@ if not st.session_state.complete:
             )
             time.sleep(2)
 
-        st.session_state.last_selected = -1
+        st.session_state.img_chosen_idx = None
         if st.session_state.quiz_idx < len(QUIZZES) - 1:
             st.session_state.quiz_idx += 1
         else:
@@ -219,9 +238,9 @@ else:
 
     st.markdown('<div class="restart-wrap">', unsafe_allow_html=True)
     if st.button("처음부터 다시 하기 🔄"):
-        st.session_state.quiz_idx      = 0
-        st.session_state.score         = 0
-        st.session_state.complete      = False
-        st.session_state.last_selected = -1
+        st.session_state.quiz_idx       = 0
+        st.session_state.score          = 0
+        st.session_state.complete       = False
+        st.session_state.img_chosen_idx = None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
