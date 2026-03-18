@@ -84,7 +84,7 @@ iframe[title="st_balloons.balloons"] {
    [A] 텍스트 선택지 버튼 — secondary
    ══════════════════════════════════════ */
 button[data-testid="stBaseButton-secondary"] {
-    height: 220px !important;
+    height: 110px !important;
     font-size: 28px !important;
     font-weight: bold !important;
     border-radius: 16px !important;
