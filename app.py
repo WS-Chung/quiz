@@ -184,26 +184,13 @@ if not st.session_state.complete:
             process_answer(clicked)
 
     else:
-        cur = st.session_state.txt_chosen
         col1, col2 = st.columns(2)
         cols = [col1, col2, col1, col2]
         for i, option in enumerate(current_q['options']):
             with cols[i]:
-                if cur == i:
-                    if st.button(option, key=f"txt_{st.session_state.quiz_idx}_{i}",
-                                 use_container_width=True, type="primary"):
-                        st.session_state.txt_chosen = None
-                        st.rerun()
-                else:
-                    if st.button(option, key=f"txt_{st.session_state.quiz_idx}_{i}",
-                                 use_container_width=True, type="secondary"):
-                        st.session_state.txt_chosen = i
-                        st.rerun()
-        st.write("")
-        if st.button("✅ 이걸로 할래요!", key=f"confirm_txt_{st.session_state.quiz_idx}",
-                     use_container_width=True, type="primary",
-                     disabled=(cur is None)):
-            process_answer(cur)
+                if st.button(option, key=f"txt_{st.session_state.quiz_idx}_{i}",
+                             use_container_width=True, type="secondary"):
+                    process_answer(i)
 
 else:
     st.balloons()
