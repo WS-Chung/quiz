@@ -81,10 +81,10 @@ button[data-testid="stBaseButton-primary"] {
 button[data-testid="stBaseButton-primary"] p { color: white !important; }
 button[data-testid="stBaseButton-primary"]:hover { background-color: #5a6fd6 !important; border-color: #5a6fd6 !important; }
 button[data-testid="stBaseButton-primary"]:disabled { background-color: #b0b8f0 !important; border-color: #b0b8f0 !important; }
-button[data-testid="stBaseButton-primary"][aria-label="처음부터 다시 하기 🔄"] {
+.restart-btn button[data-testid="stBaseButton-primary"] {
     aspect-ratio: unset !important;
     width: 100% !important;
-    height: 120px !important;
+    height: 80px !important;
     border-radius: 50px !important;
     box-shadow: 0 6px 18px rgba(102,126,234,0.45) !important;
 }
@@ -211,6 +211,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
     st.write("")
+    st.markdown('<div class="restart-btn">', unsafe_allow_html=True)
     if st.button("처음부터 다시 하기 🔄", key="restart",
                  use_container_width=True, type="primary"):
         st.session_state.quiz_idx   = 0
@@ -219,3 +220,4 @@ else:
         st.session_state.img_chosen = None
         st.session_state.txt_chosen = None
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
