@@ -39,7 +39,11 @@ QUIZZES = [
     {'id': 8, 'type': 'text', 'title': '이가 아프면 어디에 가야할까요?',
      'options': ['어린이집','치과','백화점','카페'],
      'correct_index': 1,
-     'success': '딩동댕! 치과 가본적 있어?', 'failure': '이가 아프면 치과에 가야해!'}
+     'success': '딩동댕! 치과 가본적 있어?', 'failure': '이가 아프면 치과에 가야해!'},
+    {'id': 9, 'type': 'text', 'title': '이 중에서 누구 다리가 제일 많게~?',
+     'options': ['참새','고양이','거미','돌고래'],
+     'correct_index': 2,
+     'success': '거미 다리가 몇개인지도 알아?', 'failure': '다시 잘 생각해 보자!'}
 ]
 IMAGE_DIR = "static/images"
 
