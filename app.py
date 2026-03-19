@@ -51,40 +51,49 @@ def load_b64(filename: str) -> str:
     img.save(buf, format="JPEG", quality=90)
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
 
+def get_korean_font(size: int):
+    """한글 폰트 로드 - 레포의 fonts/ 폴더 또는 시스템 폰트 탐색"""
+    candidates = [
+        "fonts/NotoSansKR-Bold.ttf",       # 레포에 직접 포함
+        "fonts/NanumGothicBold.ttf",
+        "/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf",
+        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
+        "/usr/share/fonts/truetype/fonts-japanese-gothic.ttf",
+    ]
+    import os
+    for path in candidates:
+        if os.path.exists(path):
+            return ImageFont.truetype(path, size)
+    return ImageFont.load_default(size=size)
+
 @st.cache_resource
 def text_to_b64(text: str) -> str:
-    """텍스트를 정사각형 PNG 이미지(base64)로 변환"""
-    size = 300
-    img  = Image.new("RGB", (size, size), color=(255, 255, 255))
-    draw = ImageDraw.Draw(img)
+    """텍스트를 정사각형 PNG 이미지(base64)로 변환 - 한글 지원"""
+    size   = 300
+    img    = Image.new("RGB", (size, size), color=(255, 255, 255))
+    draw   = ImageDraw.Draw(img)
+    border = 8
 
     # 테두리
-    border = 8
     draw.rounded_rectangle(
         [border, border, size - border, size - border],
-        radius=30,
-        outline=(102, 126, 234),
-        width=border
+        radius=30, outline=(102, 126, 234), width=border
     )
 
-    # 텍스트: 크기 자동 조절
-    font_size = 72
-    font = ImageFont.load_default(size=font_size)
-    # 텍스트가 박스 안에 들어올 때까지 줄임
+    # 폰트 크기 자동 조절
     max_w = size - border * 6
-    while font_size > 28:
-        font = ImageFont.load_default(size=font_size)
+    for font_size in range(72, 27, -4):
+        font = get_korean_font(font_size)
         bbox = draw.textbbox((0, 0), text, font=font)
-        tw   = bbox[2] - bbox[0]
-        if tw <= max_w:
+        if (bbox[2] - bbox[0]) <= max_w:
             break
-        font_size -= 4
 
+    # 가운데 정렬
     bbox = draw.textbbox((0, 0), text, font=font)
-    tw = bbox[2] - bbox[0]
-    th = bbox[3] - bbox[1]
-    x  = (size - tw) / 2 - bbox[0]
-    y  = (size - th) / 2 - bbox[1]
+    x = (size - (bbox[2] - bbox[0])) / 2 - bbox[0]
+    y = (size - (bbox[3] - bbox[1])) / 2 - bbox[1]
     draw.text((x, y), text, fill=(102, 126, 234), font=font)
 
     buf = io.BytesIO()
