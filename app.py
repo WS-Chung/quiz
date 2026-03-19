@@ -1,8 +1,5 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import time
-import base64
-import io
 from PIL import Image
 
 st.set_page_config(page_title="정연이 정우 퀴즈풀기", page_icon="⭐", layout="centered")
@@ -45,105 +42,8 @@ for key, val in [('quiz_idx', 0), ('score', 0), ('complete', False),
         st.session_state[key] = val
 
 @st.cache_resource
-def load_b64(filename: str) -> str:
-    img = Image.open(f"{IMAGE_DIR}/{filename}").convert("RGB")
-    buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=90)
-    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
-
-def image_grid_component(b64_list: list, selected: int) -> int | None:
-    """
-    st.components.v1.html 로 이미지 그리드를 렌더링.
-    - 이미지 클릭 → Streamlit.setComponentValue(idx) 호출
-    - Streamlit이 반환값으로 받아 Python에서 처리
-    - selected: 현재 선택된 인덱스 (-1이면 미선택)
-    """
-    sel = selected if selected is not None else -1
-    imgs_js = "[" + ",".join(f'"{b}"' for b in b64_list) + "]"
-
-    html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-    <style>
-      * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-      body {{ background: transparent; font-family: sans-serif; }}
-      .grid {{
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        padding: 4px;
-      }}
-      .card {{
-        border: 3px solid #d0d0d0;
-        border-radius: 14px;
-        overflow: hidden;
-        cursor: pointer;
-        background: #f8f8f8;
-        aspect-ratio: 1 / 1;
-        transition: border-color 0.15s, box-shadow 0.15s;
-      }}
-      .card:hover {{ border-color: #667eea; }}
-      .card.selected {{
-        border: 5px solid #667eea;
-        box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
-      }}
-      .card img {{
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        display: block;
-        pointer-events: none;
-      }}
-    </style>
-    </head>
-    <body>
-    <div class="grid" id="grid"></div>
-    <script>
-      // Streamlit 컴포넌트 API 로드
-      window.addEventListener('message', function(e) {{
-        if (e.data.type === 'streamlit:render') {{
-          init();
-        }}
-      }});
-
-      var images  = {imgs_js};
-      var current = {sel};
-
-      function init() {{
-        var grid = document.getElementById('grid');
-        grid.innerHTML = '';
-        images.forEach(function(src, idx) {{
-          var card = document.createElement('div');
-          card.className = 'card' + (idx === current ? ' selected' : '');
-          var img = document.createElement('img');
-          img.src = src;
-          card.appendChild(img);
-          card.addEventListener('click', function() {{
-            // 모든 카드 선택 해제
-            document.querySelectorAll('.card').forEach(function(c) {{
-              c.classList.remove('selected');
-            }});
-            card.classList.add('selected');
-            current = idx;
-            // Streamlit에 선택값 전달 (공식 API)
-            Streamlit.setComponentValue(idx);
-          }});
-          grid.appendChild(card);
-        }});
-        Streamlit.setFrameHeight(document.body.scrollHeight);
-      }}
-
-      // 즉시 초기화도 실행 (render 이벤트가 늦을 경우 대비)
-      document.addEventListener('DOMContentLoaded', init);
-      setTimeout(init, 100);
-    </script>
-    </body>
-    </html>
-    """
-    # components.html의 반환값 = Streamlit.setComponentValue()로 전달한 값
-    result = components.html(html, height=430, scrolling=False)
-    return result
+def load_image(filename: str) -> Image.Image:
+    return Image.open(f"{IMAGE_DIR}/{filename}").convert("RGB")
 
 st.markdown("""
 <style>
@@ -151,6 +51,60 @@ st.markdown("""
 iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important; transform-origin: center center !important;
 }
+
+/* ── 이미지 카드 테두리 ── */
+.img-unsel {
+    border: 3px solid #d0d0d0;
+    border-radius: 14px 14px 0 0;
+    overflow: hidden;
+    background: #f8f8f8;
+}
+.img-sel {
+    border: 5px solid #667eea;
+    border-bottom: none;
+    border-radius: 14px 14px 0 0;
+    overflow: hidden;
+    background: #f8f8f8;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
+}
+
+/* ── 이미지 선택 버튼 (이미지 바로 아래) ── */
+.btn-unsel button[data-testid="stBaseButton-secondary"] {
+    width: 100% !important;
+    height: 50px !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    border-radius: 0 0 14px 14px !important;
+    border: 3px solid #d0d0d0 !important;
+    border-top: none !important;
+    background: white !important;
+    color: #aaa !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+}
+.btn-sel button[data-testid="stBaseButton-primary"] {
+    width: 100% !important;
+    height: 50px !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    border-radius: 0 0 14px 14px !important;
+    border: 5px solid #667eea !important;
+    border-top: none !important;
+    background: #667eea !important;
+    color: white !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+}
+.btn-unsel button p, .btn-sel button p {
+    font-size: 18px !important;
+    color: inherit !important;
+}
+.btn-unsel button:hover {
+    border-color: #667eea !important;
+    color: #667eea !important;
+}
+
+/* ── 텍스트 선택지 버튼 ── */
 button[data-testid="stBaseButton-secondary"],
 button[data-testid="stBaseButton-primary"] {
     height: 110px !important; font-size: 28px !important; font-weight: bold !important;
@@ -177,6 +131,7 @@ button[data-testid="stBaseButton-primary"][aria-label="처음부터 다시 하�
     border-radius: 50px !important; height: 120px !important;
     box-shadow: 0 6px 18px rgba(102,126,234,0.45) !important;
 }
+
 .result-msg-box {
     padding: 22px; border-radius: 20px; font-size: 28px; font-weight: bold;
     margin: 18px auto; width: 100%; text-align: center; animation: fadeIn 0.4s ease-out;
@@ -223,21 +178,34 @@ if not st.session_state.complete:
         unsafe_allow_html=True)
 
     if current_q['type'] == 'image':
-        img_sel  = st.session_state.img_chosen
-        qidx     = st.session_state.quiz_idx
-        b64_list = [load_b64(fn) for fn in current_q['options']]
+        img_sel = st.session_state.img_chosen
+        qidx    = st.session_state.quiz_idx
+        col1, col2 = st.columns(2)
+        cols = [col1, col2, col1, col2]
 
-        # components.html 이미지 그리드 — 클릭 시 인덱스 반환
-        clicked = image_grid_component(b64_list, img_sel)
+        for i, fname in enumerate(current_q['options']):
+            img = load_image(fname)
+            is_sel = (img_sel == i)
+            with cols[i]:
+                # 이미지 (선택 여부에 따라 테두리)
+                div_cls = "img-sel" if is_sel else "img-unsel"
+                st.markdown(f'<div class="{div_cls}">', unsafe_allow_html=True)
+                st.image(img, use_container_width=True)
+                st.markdown('</div>', unsafe_allow_html=True)
 
-        # 클릭된 값이 있고 이전과 다르면 선택 업데이트
-        if clicked is not None and clicked != img_sel:
-            st.session_state.img_chosen = clicked
-            st.rerun()
+                # 선택 버튼 (이미지와 시각적으로 붙어있음)
+                btn_cls   = "btn-sel"   if is_sel else "btn-unsel"
+                btn_label = "✅ 선택됨" if is_sel else "▶ 선택하기"
+                btn_type  = "primary"   if is_sel else "secondary"
+                st.markdown(f'<div class="{btn_cls}">', unsafe_allow_html=True)
+                if st.button(btn_label, key=f"img_{qidx}_{i}",
+                             use_container_width=True, type=btn_type):
+                    st.session_state.img_chosen = i
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
         st.write("")
-        if st.button("✅ 이걸로 할래요!",
-                     key=f"confirm_img_{qidx}",
+        if st.button("✅ 이걸로 할래요!", key=f"confirm_img_{qidx}",
                      use_container_width=True, type="primary",
                      disabled=(img_sel is None)):
             process_answer(img_sel)
@@ -259,8 +227,7 @@ if not st.session_state.complete:
                         st.session_state.txt_chosen = i
                         st.rerun()
         st.write("")
-        if st.button("✅ 이걸로 할래요!",
-                     key=f"confirm_txt_{st.session_state.quiz_idx}",
+        if st.button("✅ 이걸로 할래요!", key=f"confirm_txt_{st.session_state.quiz_idx}",
                      use_container_width=True, type="primary",
                      disabled=(cur is None)):
             process_answer(cur)
