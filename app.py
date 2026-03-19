@@ -50,6 +50,12 @@ def load_b64(filename: str) -> str:
     img.save(buf, format="JPEG", quality=90)
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
 
+# ─────────────────────────────────────────
+# CSS
+# 이미지 버튼: background-image로 이미지 표시
+# 텍스트는 color:transparent로 숨김
+# 선택: primary(보라 테두리), 미선택: secondary(회색 테두리)
+# ─────────────────────────────────────────
 st.markdown("""
 <style>
 .main .block-container { max-width: 760px; margin: 0 auto; padding-top: 1rem; }
@@ -57,31 +63,42 @@ iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important; transform-origin: center center !important;
 }
 
-/* ── 이미지 카드: 클릭 가능한 label로 감쌈 ── */
-.img-card-label {
-    display: block;
-    cursor: pointer;
-    border-radius: 14px;
-    overflow: hidden;
-    border: 3px solid #d0d0d0;
-    background: #f8f8f8;
-    transition: border-color 0.15s, box-shadow 0.15s;
-    margin-bottom: 4px;
+/* ── 이미지 컬럼에 있는 버튼: background-image 방식 ── */
+.img-col div[data-testid="stButton"] > button {
+    width: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    height: auto !important;
+    min-height: 150px !important;
+    border-radius: 14px !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-color: #f8f8f8 !important;
+    color: transparent !important;
+    font-size: 0 !important;
+    cursor: pointer !important;
+    transition: border-color 0.15s, box-shadow 0.15s !important;
+    padding: 0 !important;
+    margin-bottom: 10px !important;
 }
-.img-card-label:hover { border-color: #667eea; }
-.img-card-label.selected {
-    border: 5px solid #667eea;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+.img-col div[data-testid="stButton"] > button p {
+    display: none !important;
 }
-.img-card-label img {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    object-fit: contain;
-    display: block;
+/* 미선택: 회색 테두리 */
+.img-col div[data-testid="stButton"] > button[data-testid="stBaseButton-secondary"] {
+    border: 3px solid #d0d0d0 !important;
+    box-shadow: none !important;
 }
-
-/* radio 완전히 숨김 */
-div[data-testid="stRadio"] { display: none !important; }
+.img-col div[data-testid="stButton"] > button[data-testid="stBaseButton-secondary"]:hover {
+    border-color: #667eea !important;
+    background-color: #f8f8f8 !important;
+}
+/* 선택됨: 보라 테두리 */
+.img-col div[data-testid="stButton"] > button[data-testid="stBaseButton-primary"] {
+    border: 5px solid #667eea !important;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.2) !important;
+    background-color: #f0f2ff !important;
+}
 
 /* ── 텍스트 선택지 버튼 ── */
 button[data-testid="stBaseButton-secondary"],
@@ -110,6 +127,7 @@ button[data-testid="stBaseButton-primary"][aria-label="처음부터 다시 하�
     border-radius: 50px !important; height: 120px !important;
     box-shadow: 0 6px 18px rgba(102,126,234,0.45) !important;
 }
+
 .result-msg-box {
     padding: 22px; border-radius: 20px; font-size: 28px; font-weight: bold;
     margin: 18px auto; width: 100%; text-align: center; animation: fadeIn 0.4s ease-out;
@@ -158,78 +176,48 @@ if not st.session_state.complete:
     if current_q['type'] == 'image':
         img_sel = st.session_state.img_chosen
         b64_list = [load_b64(fn) for fn in current_q['options']]
-
-        # ── 핵심 구조 ──
-        # 1. st.radio를 CSS로 완전히 숨김 (값 저장 역할만)
-        # 2. 이미지를 <label for="radio_id"> 로 감쌈
-        #    → 이미지 클릭 = label 클릭 = radio 선택 = Streamlit rerun
-        # 3. 선택된 이미지는 보라 테두리
-
         qidx = st.session_state.quiz_idx
 
-        # 숨겨진 radio (0~3 선택)
-        radio_val = st.radio(
-            "img_radio",
-            options=[0, 1, 2, 3],
-            index=img_sel if img_sel is not None else 0,
-            key=f"radio_{qidx}",
-            horizontal=True
-        )
-
-        # radio가 처음 로딩될 때 img_chosen=None이면 선택 안 된 상태 유지
-        # radio의 초기값(0)이 자동 선택되는 문제 → sentinel로 구분
-        if img_sel is None:
-            # 아직 아무것도 선택 안 한 상태 → radio 값 무시
-            pass
-        elif radio_val != img_sel:
-            st.session_state.img_chosen = radio_val
-            st.rerun()
-
-        # radio input 의 실제 DOM id 를 알아내기 위해
-        # label for 속성에 radio input id 를 연결해야 함
-        # → Streamlit radio 의 input id 패턴: "radio_{key}-{value}"
         col1, col2 = st.columns(2)
         cols = [col1, col2, col1, col2]
+
+        # 버튼을 렌더링한 뒤 JS로 background-image 주입
+        # (CSS에서 동적 url() 값을 직접 넣을 수 없으므로)
         for i, b64 in enumerate(b64_list):
-            sel_class = "selected" if img_sel == i else ""
-            # radio input id: Streamlit 내부 패턴
-            radio_id = f"radio_{qidx}-{i}"
+            btn_type = "primary" if img_sel == i else "secondary"
             with cols[i]:
-                # label 클릭 → 연결된 radio input 클릭 → Streamlit 값 변경 → rerun
+                st.markdown('<div class="img-col">', unsafe_allow_html=True)
+                clicked = st.button(
+                    f"img{i}",   # 텍스트는 CSS로 숨김
+                    key=f"img_{qidx}_{i}",
+                    use_container_width=True,
+                    type=btn_type
+                )
+                # JS로 해당 버튼에 background-image 주입
                 st.markdown(f"""
-                <label for="{radio_id}" class="img-card-label {sel_class}">
-                    <img src="{b64}" />
-                </label>
+                <script>
+                (function() {{
+                    var btns = window.parent.document.querySelectorAll(
+                        'button[data-testid="stBaseButton-secondary"], button[data-testid="stBaseButton-primary"]'
+                    );
+                    // key 속성 대신 텍스트 내용으로 버튼 찾기
+                    btns.forEach(function(btn) {{
+                        var p = btn.querySelector('p');
+                        if (p && p.textContent.trim() === 'img{i}') {{
+                            btn.style.backgroundImage = 'url("{b64}")';
+                            btn.style.backgroundSize = 'contain';
+                            btn.style.backgroundRepeat = 'no-repeat';
+                            btn.style.backgroundPosition = 'center';
+                        }}
+                    }});
+                }})();
+                </script>
                 """, unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
 
-        # radio 클릭 감지: radio_val 변화 → img_chosen 업데이트
-        if radio_val != img_sel and img_sel is not None:
-            st.session_state.img_chosen = radio_val
-            st.rerun()
-
-        # 이미지 클릭 후 img_chosen=None 상태에서 label 클릭하면
-        # radio_val이 0이 되는데, 이걸 최초 선택으로 인식해야 함
-        # → JS로 radio 변경 이벤트 감지해서 img_chosen 초기화
-        st.markdown(f"""
-        <script>
-        (function() {{
-            // radio 변경 시 img_chosen 을 None에서 업데이트하기 위해
-            // Streamlit이 자동으로 rerun하므로 별도 처리 불필요
-            // label 클릭 → radio change → Streamlit rerun → img_chosen 갱신
-            var radios = window.parent.document.querySelectorAll(
-                'input[type="radio"][name]'
-            );
-        }})();
-        </script>
-        """, unsafe_allow_html=True)
-
-        # img_chosen이 None일 때 label 클릭 → radio_val=0 이 되는 경우 처리
-        if img_sel is None and radio_val == 0:
-            # 처음 로딩인지 클릭인지 구분 불가 → 확인 버튼 비활성으로 안전 처리
-            pass
-        elif img_sel is None and radio_val != 0:
-            st.session_state.img_chosen = radio_val
-            st.rerun()
+                if clicked:
+                    st.session_state.img_chosen = i
+                    st.rerun()
 
         st.write("")
         if st.button("✅ 이걸로 할래요!",
