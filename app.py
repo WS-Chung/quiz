@@ -58,69 +58,66 @@ iframe[title="st_balloons.balloons"] {
 }
 
 /* ══════════════════════════════════════
-   이미지 카드 래퍼
-   position:relative 로 자식 버튼의 absolute 기준점
+   이미지 퀴즈 버튼
+   
+   구조:
+     div.stButton (position:relative 기준점)
+       └── button  (투명, 전체 영역 클릭)
+       └── img.over-img (position:absolute, 버튼 위를 덮음)
+       └── div.over-border (position:absolute, 테두리)
+   
+   이미지와 테두리는 ::after 대신 별도 태그로,
+   pointer-events:none 으로 클릭을 버튼에 통과시킴
    ══════════════════════════════════════ */
-.card-wrap {
-    position: relative;
-    width: 100%;
-    margin-bottom: 12px;
-    border-radius: 14px;
-    overflow: hidden;
-    /* 정사각형: padding-bottom 트릭 */
-    padding-bottom: 100%;
-    background: #f8f8f8;
+
+/* 버튼 컨테이너를 기준점으로 */
+.icard div[data-testid="stButton"] {
+    position: relative !important;
+    width: 100% !important;
+    padding-bottom: 100% !important;   /* 정사각형 높이 확보 */
+    height: 0 !important;
+    margin-bottom: 12px !important;
 }
 
-/* 이미지: 카드 전체 채움 */
-.card-wrap img {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    object-fit: contain;
-    border-radius: 14px;
-    pointer-events: none;  /* 클릭 통과 */
-    z-index: 1;
-}
-
-/* 테두리 오버레이 */
-.card-wrap .border-layer {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    border-radius: 14px;
-    pointer-events: none;
-    z-index: 3;
-    box-sizing: border-box;
-}
-.card-wrap .border-unsel { border: 3px solid #d0d0d0; }
-.card-wrap .border-sel   { border: 5px solid #667eea;
-                            box-shadow: 0 0 0 3px rgba(102,126,234,0.2); }
-
-/* 투명 버튼: 카드 전체를 덮는 클릭 영역 */
-.card-wrap > div[data-testid="stButton"] {
+/* 투명 버튼: 전체 영역 */
+.icard div[data-testid="stButton"] > button {
     position: absolute !important;
     top: 0 !important; left: 0 !important;
     width: 100% !important; height: 100% !important;
-    z-index: 2 !important;
-    margin: 0 !important; padding: 0 !important;
-}
-.card-wrap > div[data-testid="stButton"] > button {
-    position: absolute !important;
-    top: 0 !important; left: 0 !important;
-    width: 100% !important; height: 100% !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+    background: #f8f8f8 !important;
     border-radius: 14px !important;
     cursor: pointer !important;
-    z-index: 2 !important;
+    z-index: 1 !important;
     padding: 0 !important;
-    opacity: 0 !important;   /* 완전 투명: 이미지만 보임 */
+    /* 텍스트 숨김 */
+    color: transparent !important;
+    font-size: 0 !important;
 }
-.card-wrap > div[data-testid="stButton"] > button:hover {
-    opacity: 0.05 !important;
-    background: #667eea !important;
+.icard div[data-testid="stButton"] > button p {
+    display: none !important;
+}
+
+/* 미선택 테두리 */
+.icard-unsel div[data-testid="stButton"] > button {
+    border: 3px solid #d0d0d0 !important;
+    box-shadow: none !important;
+}
+.icard-unsel div[data-testid="stButton"] > button:hover {
+    border-color: #667eea !important;
+}
+
+/* 선택됨 테두리 */
+.icard-sel div[data-testid="stButton"] > button {
+    border: 5px solid #667eea !important;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.2) !important;
+}
+
+/* 이미지 오버레이: 버튼 위를 덮되 클릭은 통과 */
+.icard div[data-testid="stButton"] > button::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
 }
 
 /* ── 텍스트 선택지 버튼 ── */
@@ -151,7 +148,7 @@ button[data-testid="stBaseButton-primary"][aria-label="✅ 이걸로 할래요!"
 button[data-testid="stBaseButton-primary"][aria-label="처음부터 다시 하기 🔄"] {
     border-radius: 50px !important; height: 120px !important;
     box-shadow: 0 6px 18px rgba(102,126,234,0.45) !important;
-    opacity: 1 !important;
+    color: white !important;
 }
 
 .result-msg-box {
@@ -208,39 +205,56 @@ if not st.session_state.complete:
         cols = [col1, col2, col1, col2]
 
         for i, b64 in enumerate(b64s):
-            is_sel      = (img_sel == i)
-            border_cls  = "border-sel" if is_sel else "border-unsel"
+            is_sel   = (img_sel == i)
+            card_cls = "icard icard-sel" if is_sel else "icard icard-unsel"
+
             with cols[i]:
-                # .card-wrap: position:relative 기준
+                # 1) 버튼을 먼저 렌더링 (CSS로 정사각형 영역 확보)
+                st.markdown(f'<div class="{card_cls}">', unsafe_allow_html=True)
+                clicked = st.button(
+                    " ",
+                    key=f"img_{qidx}_{i}",
+                    use_container_width=True
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+
+                # 2) 이미지를 버튼 바로 위에 absolute로 올리는 CSS 동적 주입
+                #    버튼 key로 구분: 해당 버튼의 부모 div 다음 형제 img를
+                #    JS로 버튼 안에 absolute 삽입
                 st.markdown(f"""
-                <div class="card-wrap">
-                  <img src="{b64}" />
-                  <div class="border-layer {border_cls}"></div>
-                </div>
+                <img id="oi_{qidx}_{i}" src="{b64}" style="
+                    display:none;
+                    position:absolute;
+                    top:0;left:0;
+                    width:100%;height:100%;
+                    object-fit:contain;
+                    border-radius:11px;
+                    pointer-events:none;
+                    z-index:2;
+                "/>
+                <script>
+                (function(){{
+                    var img = document.getElementById('oi_{qidx}_{i}');
+                    if (!img) return;
+                    // .icard div 안의 button을 찾아서 그 부모에 img 삽입
+                    var cards = document.querySelectorAll('.icard');
+                    // i번째 카드 찾기
+                    var card = cards[{i}];
+                    if (card) {{
+                        var btnDiv = card.querySelector('[data-testid="stButton"]');
+                        if (btnDiv) {{
+                            btnDiv.style.position = 'relative';
+                            img.style.display = 'block';
+                            btnDiv.appendChild(img);
+                        }}
+                    }}
+                }})();
+                </script>
                 """, unsafe_allow_html=True)
-                # 버튼을 card-wrap 바로 다음에 렌더링
-                # CSS로 card-wrap 안의 첫 번째 stButton을 absolute로 올림
-                if st.button(" ", key=f"img_{qidx}_{i}", use_container_width=True):
+
+                if clicked:
                     st.session_state.img_chosen = i
                     st.rerun()
-
-        # card-wrap 안으로 버튼을 당기는 JS (렌더링 후 한 번만 실행)
-        st.markdown(f"""
-        <script>
-        (function fixCards() {{
-            var wraps = document.querySelectorAll('.card-wrap');
-            wraps.forEach(function(wrap) {{
-                // wrap 바로 다음 형제의 stButton 을 wrap 안으로 이동
-                var next = wrap.parentElement.nextElementSibling;
-                if (next) {{
-                    var btn = next.querySelector('[data-testid="stButton"]');
-                    if (btn) wrap.appendChild(btn);
-                }}
-            }});
-        }})();
-        setTimeout(fixCards, 200);
-        </script>
-        """, unsafe_allow_html=True)
 
         st.write("")
         if st.button("✅ 이걸로 할래요!", key=f"confirm_img_{qidx}",
