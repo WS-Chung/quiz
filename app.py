@@ -69,41 +69,39 @@ iframe[title="st_balloons.balloons"] {
     transform-origin: center center !important;
 }
 
-/* ══ 텍스트 선택지 버튼 (primary)
-   height를 vw 단위로 → 화면 너비의 절반 크기로 정사각형 유지
-   모바일(360px): 약 170px / PC(720px): 약 340px → max로 제한
-   ══ */
-button[data-testid="stBaseButton-primary"] {
-    width: 100% !important;
-    height: min(42vw, 300px) !important;
-    font-size: clamp(14px, 4.5vw, 26px) !important;
-    font-weight: bold !important;
-    border-radius: 14px !important;
-    white-space: normal !important;
-    word-break: keep-all !important;
-    line-height: 1.3 !important;
-    box-shadow: none !important;
-    border: 3px solid #667eea !important;
-    background-color: white !important;
-    color: #667eea !important;
-    transition: none !important;
-    padding: 8px !important;
+/* ══ 텍스트 선택지: 숨겨진 트리거 버튼 ══ */
+.txt-trigger-row {
+    display: none !important;
 }
-button[data-testid="stBaseButton-primary"] p {
-    font-size: clamp(14px, 4.5vw, 26px) !important;
-    font-weight: bold !important;
-    line-height: 1.3 !important;
-    color: #667eea !important;
+
+/* ══ 텍스트 선택지: CSS grid 카드 ══ */
+.txt-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 2px;
+    width: 100%;
+    box-sizing: border-box;
 }
-/* 피드백 없음 */
-button[data-testid="stBaseButton-primary"]:hover,
-button[data-testid="stBaseButton-primary"]:active,
-button[data-testid="stBaseButton-primary"]:focus {
-    background-color: white !important;
-    border-color: #667eea !important;
-    outline: none !important;
-    box-shadow: none !important;
-    color: #667eea !important;
+.txt-card {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #667eea;
+    border-radius: 14px;
+    background: white;
+    color: #667eea;
+    font-weight: bold;
+    font-size: clamp(14px, 5vw, 24px);
+    text-align: center;
+    cursor: pointer;
+    word-break: keep-all;
+    line-height: 1.3;
+    padding: 8px;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
 }
 
 /* ══ 다시하기 버튼 (secondary) ══ */
@@ -225,21 +223,43 @@ if not st.session_state.complete:
         if clicked > -1:
             process_answer(clicked)
 
-    # ── 텍스트 퀴즈: st.button으로 한글 정상 표시 ──
-    # height를 vw 단위로 지정해 모바일에서도 2x2 유지
+    # ── 텍스트 퀴즈 ──
+    # 구조:
+    # 1) 숨겨진 st.button 4개 → CSS로 display:none, 클릭 처리 담당
+    # 2) HTML CSS grid 카드 → 사용자에게 보이는 UI
+    # 3) 카드 onclick → 부모 document의 숨긴 버튼을 querySelector로 클릭
     else:
-        col1, col2 = st.columns(2, gap="small")
-        cols = [col1, col2, col1, col2]
-        txt_clicked = None
+        # 숨겨진 트리거 버튼 (display:none)
+        st.markdown('<div class="txt-trigger-row">', unsafe_allow_html=True)
+        hcols = st.columns(4)
+        triggers = []
+        for i in range(4):
+            with hcols[i]:
+                triggers.append(
+                    st.button(f"t{i}", key=f"trig_{qidx}_{i}")
+                )
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # 트리거 감지
+        for i, clicked in enumerate(triggers):
+            if clicked:
+                process_answer(i)
+
+        # CSS grid 카드 (보이는 UI)
+        # onclick: 부모 document에서 key 기반으로 숨긴 버튼 클릭
+        cards_html = '<div class="txt-grid">'
         for i, option in enumerate(current_q['options']):
-            with cols[i]:
-                if st.button(option,
-                             key=f"txt_{qidx}_{i}",
-                             use_container_width=True,
-                             type="primary"):
-                    txt_clicked = i
-        if txt_clicked is not None:
-            process_answer(txt_clicked)
+            # data-testid로 찾기 어려우므로 버튼 텍스트(t0~t3)로 찾음
+            js = (
+                f"var btns=window.parent.document.querySelectorAll('button');"
+                f"for(var b of btns){{if(b.innerText.trim()==='t{i}'){{b.click();break;}}}}"
+            )
+            cards_html += (
+                f'<div class="txt-card" onclick="{js}">'
+                f'{option}</div>'
+            )
+        cards_html += '</div>'
+        st.markdown(cards_html, unsafe_allow_html=True)
 
 # ── 결과 페이지 ──
 else:
