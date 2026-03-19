@@ -52,13 +52,6 @@ def load_b64(filename: str) -> str:
 
 # ─────────────────────────────────────────
 # CSS
-# 핵심 구조:
-#   .card-outer  (position:relative, 크기 기준)
-#     ├── .card-img  (position:absolute, 이미지, pointer-events:none, z-index:1)
-#     └── st.button  (position:absolute, 투명, z-index:2, 클릭 담당)
-#
-# Streamlit이 st.button을 .card-outer 바로 아래에 렌더링하도록
-# st.button을 먼저 출력하고, CSS로 absolute 위치를 잡음
 # ─────────────────────────────────────────
 st.markdown("""
 <style>
@@ -72,74 +65,72 @@ iframe[title="st_balloons.balloons"] {
     transform-origin: center center !important;
 }
 
-/* ── 이미지 카드 외부 컨테이너 ── */
-.card-outer {
-    position: relative;
-    width: 100%;
-    padding-bottom: 100%;   /* 1:1 비율 유지 */
-    margin-bottom: 12px;
-    border-radius: 14px;
-    overflow: hidden;
-    background: #f8f8f8;
-}
+/* ══════════════════════════════════════
+   이미지 선택지 버튼
+   st.button 안에 <img> HTML을 label로 넣어
+   버튼 자체가 이미지처럼 보이게 함
+   ══════════════════════════════════════ */
 
-/* ── 이미지 레이어 (뒤, 클릭 통과) ── */
-.card-img {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    object-fit: contain;
-    border-radius: 14px;
-    pointer-events: none;
-    z-index: 1;
-}
-
-/* ── 테두리 레이어 (선택 표시, 클릭 통과) ── */
-.card-border {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    border-radius: 14px;
-    pointer-events: none;
-    z-index: 3;
-    box-sizing: border-box;
-}
-.card-border.unselected {
-    border: 3px solid #d0d0d0;
-}
-.card-border.selected {
-    border: 6px solid #667eea;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
-}
-
-/* ── 투명 버튼 레이어 (앞, 클릭 처리) ── */
-.card-outer > div[data-testid="stButton"],
-.card-outer > div > div[data-testid="stButton"] {
-    position: absolute !important;
-    top: 0 !important; left: 0 !important;
-    width: 100% !important; height: 100% !important;
-    z-index: 2 !important;
-    margin: 0 !important; padding: 0 !important;
-}
-.card-outer button[data-testid="stBaseButton-secondary"],
-.card-outer button[data-testid="stBaseButton-primary"] {
-    position: absolute !important;
-    top: 0 !important; left: 0 !important;
-    width: 100% !important; height: 100% !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+/* 이미지 버튼 공통 */
+button[data-testid="stBaseButton-secondary"].img-btn,
+button[data-testid="stBaseButton-primary"].img-btn,
+/* label로 img 태그가 들어간 버튼을 찾는 대신
+   .img-col 안의 모든 버튼에 적용 */
+.img-col button[data-testid="stBaseButton-secondary"],
+.img-col button[data-testid="stBaseButton-primary"] {
+    width: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    height: auto !important;
+    min-height: 140px !important;
+    padding: 6px !important;
     border-radius: 14px !important;
+    background: #f8f8f8 !important;
     cursor: pointer !important;
-    padding: 0 !important;
+    box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    margin-bottom: 10px !important;
 }
-/* 버튼 내부 텍스트 완전 숨김 */
-.card-outer button p,
-.card-outer button span { display: none !important; }
 
-/* hover 시 살짝 밝게 */
-.card-outer button:hover {
-    background: rgba(102,126,234,0.06) !important;
+/* 미선택: 회색 테두리 */
+.img-col button[data-testid="stBaseButton-secondary"] {
+    border: 3px solid #d0d0d0 !important;
+}
+.img-col button[data-testid="stBaseButton-secondary"]:hover {
+    border-color: #667eea !important;
+    background: #f0f2ff !important;
+}
+
+/* 선택됨: 보라 테두리 */
+.img-col button[data-testid="stBaseButton-primary"] {
+    border: 6px solid #667eea !important;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.2) !important;
+    background: #f0f2ff !important;
+}
+
+/* 버튼 내부 p 태그 (이미지 HTML이 들어있음) */
+.img-col button p {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0 !important;  /* 혹시 남은 텍스트 숨김 */
+}
+
+/* 버튼 내부 img */
+.img-col button img {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    border-radius: 10px !important;
+    display: block !important;
+    pointer-events: none !important;
 }
 
 /* ══════════════════════════════════════
@@ -242,6 +233,9 @@ if not st.session_state.complete:
 
     # ══════════════════════════════════════
     # 이미지 퀴즈
+    # 핵심: st.button의 label에 <img> HTML을 직접 넣음
+    # → 버튼 자체가 이미지처럼 보이고, 버튼 클릭으로 선택 처리
+    # → JS/HTML onclick 불필요, Streamlit 네이티브 동작
     # ══════════════════════════════════════
     if current_q['type'] == 'image':
         img_sel = st.session_state.img_chosen
@@ -250,24 +244,20 @@ if not st.session_state.complete:
 
         for i, fname in enumerate(current_q['options']):
             b64 = load_b64(fname)
-            border_cls = "selected" if img_sel == i else "unselected"
-            with cols[i]:
-                # .card-outer 시작: padding-bottom 트릭으로 정사각형 확보
-                st.markdown('<div class="card-outer">', unsafe_allow_html=True)
+            # 버튼 label에 img 태그 삽입
+            img_html = f'<img src="{b64}" style="width:100%;height:auto;object-fit:contain;border-radius:10px;"/>'
+            btn_type = "primary" if img_sel == i else "secondary"
 
-                # 투명 버튼 (클릭 담당, z-index:2)
-                if st.button(" ", key=f"img_{st.session_state.quiz_idx}_{i}",
-                             use_container_width=True):
+            with cols[i]:
+                # .img-col 클래스로 감싸서 CSS 적용
+                st.markdown('<div class="img-col">', unsafe_allow_html=True)
+                if st.button(img_html,
+                             key=f"img_{st.session_state.quiz_idx}_{i}",
+                             use_container_width=True,
+                             type=btn_type):
                     st.session_state.img_chosen = i
                     st.rerun()
-
-                # 이미지 레이어 (z-index:1, pointer-events:none)
-                st.markdown(
-                    f'<img class="card-img" src="{b64}"/>'
-                    f'<div class="card-border {border_cls}"></div>'
-                    '</div>',
-                    unsafe_allow_html=True
-                )
+                st.markdown('</div>', unsafe_allow_html=True)
 
         st.write("")
         if st.button("✅ 이걸로 할래요!",
