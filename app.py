@@ -58,40 +58,40 @@ iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important; transform-origin: center center !important;
 }
 /* 텍스트 선택지 버튼 */
-button[data-testid="stBaseButton-secondary"],
+/* 텍스트 선택지 버튼 (primary): 정사각형 */
 button[data-testid="stBaseButton-primary"] {
+    aspect-ratio: 1 / 1 !important;
+    height: auto !important;
     font-size: 28px !important; font-weight: bold !important;
     border-radius: 16px !important; white-space: normal !important;
     word-break: keep-all !important; line-height: 1.3 !important; box-shadow: none !important;
 }
-/* 텍스트 선택지만 정사각형 */
-.txt-quiz button[data-testid="stBaseButton-secondary"],
-.txt-quiz button[data-testid="stBaseButton-primary"] {
-    aspect-ratio: 1 / 1 !important;
-    height: auto !important;
-}
-/* 다시하기 버튼: 납작하게 */
-.restart-btn button[data-testid="stBaseButton-primary"] {
+/* 다시하기 버튼 (secondary): 납작한 pill */
+button[data-testid="stBaseButton-secondary"] {
     aspect-ratio: unset !important;
-    height: 80px !important;
-    border-radius: 50px !important;
+    height: 120px !important;
+    font-size: 28px !important; font-weight: bold !important;
+    border-radius: 50px !important; white-space: normal !important;
+    word-break: keep-all !important; line-height: 1.3 !important;
     box-shadow: 0 6px 18px rgba(102,126,234,0.45) !important;
 }
 button[data-testid="stBaseButton-secondary"] p,
 button[data-testid="stBaseButton-primary"] p {
     font-size: 28px !important; font-weight: bold !important; line-height: 1.3 !important;
 }
-button[data-testid="stBaseButton-secondary"] {
+/* primary: 텍스트 선택지 — 흰 배경 보라 테두리 */
+button[data-testid="stBaseButton-primary"] {
     border: 4px solid #667eea !important; background-color: white !important; color: #667eea !important;
 }
-button[data-testid="stBaseButton-secondary"] p { color: #667eea !important; }
-button[data-testid="stBaseButton-secondary"]:hover { background-color: #f0f2ff !important; }
-button[data-testid="stBaseButton-primary"] {
+button[data-testid="stBaseButton-primary"] p { color: #667eea !important; }
+button[data-testid="stBaseButton-primary"]:hover { background-color: #f0f2ff !important; }
+/* secondary: 다시하기 버튼 — 보라 채움 */
+button[data-testid="stBaseButton-secondary"] {
     border: 4px solid #667eea !important; background-color: #667eea !important; color: white !important;
 }
-button[data-testid="stBaseButton-primary"] p { color: white !important; }
-button[data-testid="stBaseButton-primary"]:hover { background-color: #5a6fd6 !important; border-color: #5a6fd6 !important; }
-button[data-testid="stBaseButton-primary"]:disabled { background-color: #b0b8f0 !important; border-color: #b0b8f0 !important; }
+button[data-testid="stBaseButton-secondary"] p { color: white !important; }
+button[data-testid="stBaseButton-secondary"]:hover { background-color: #5a6fd6 !important; border-color: #5a6fd6 !important; }
+button[data-testid="stBaseButton-secondary"]:disabled { background-color: #b0b8f0 !important; border-color: #b0b8f0 !important; }
 
 .result-msg-box {
     padding: 22px; border-radius: 20px; font-size: 28px; font-weight: bold;
@@ -193,17 +193,15 @@ if not st.session_state.complete:
             process_answer(clicked)
 
     else:
-        st.markdown('<div class="txt-quiz">', unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         cols = [col1, col2, col1, col2]
         txt_clicked = None
         for i, option in enumerate(current_q['options']):
             with cols[i]:
                 if st.button(option, key=f"txt_{st.session_state.quiz_idx}_{i}",
-                             use_container_width=True, type="secondary"):
+                             use_container_width=True, type="primary"):
                     txt_clicked = i
-        st.markdown('</div>', unsafe_allow_html=True)
-        if txt_clicked is not None:
+            if txt_clicked is not None:
             process_answer(txt_clicked)
 
 else:
@@ -218,13 +216,11 @@ else:
         </div>
     """, unsafe_allow_html=True)
     st.write("")
-    st.markdown('<div class="restart-btn">', unsafe_allow_html=True)
     if st.button("처음부터 다시 하기 🔄", key="restart",
-                 use_container_width=True, type="primary"):
+                 use_container_width=True, type="secondary"):
         st.session_state.quiz_idx   = 0
         st.session_state.score      = 0
         st.session_state.complete   = False
         st.session_state.img_chosen = None
         st.session_state.txt_chosen = None
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
