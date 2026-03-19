@@ -1,5 +1,7 @@
 import streamlit as st
 import time
+import base64
+import io
 from PIL import Image
 
 st.set_page_config(page_title="정연이 정우 퀴즈풀기", page_icon="⭐", layout="centered")
@@ -42,8 +44,11 @@ for key, val in [('quiz_idx', 0), ('score', 0), ('complete', False),
         st.session_state[key] = val
 
 @st.cache_resource
-def load_image(filename: str) -> Image.Image:
-    return Image.open(f"{IMAGE_DIR}/{filename}").convert("RGB")
+def load_b64(filename: str) -> str:
+    img = Image.open(f"{IMAGE_DIR}/{filename}").convert("RGB")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=90)
+    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
 
 st.markdown("""
 <style>
@@ -52,54 +57,70 @@ iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important; transform-origin: center center !important;
 }
 
-/* ── 이미지 카드 테두리 ── */
-.img-unsel {
-    border: 3px solid #d0d0d0;
+/* ══════════════════════════════════════
+   이미지 카드 래퍼
+   position:relative 로 자식 버튼의 absolute 기준점
+   ══════════════════════════════════════ */
+.card-wrap {
+    position: relative;
+    width: 100%;
+    margin-bottom: 12px;
     border-radius: 14px;
     overflow: hidden;
-    margin-bottom: 4px;
-    cursor: pointer;
-}
-.img-sel {
-    border: 5px solid #667eea;
-    border-radius: 14px;
-    overflow: hidden;
-    margin-bottom: 4px;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
-    cursor: pointer;
+    /* 정사각형: padding-bottom 트릭 */
+    padding-bottom: 100%;
+    background: #f8f8f8;
 }
 
-/* ── 이미지 아래 선택 버튼 ── */
-.img-unsel-btn button[data-testid="stBaseButton-secondary"] {
-    width: 100% !important;
-    height: 44px !important;
-    font-size: 15px !important;
-    font-weight: bold !important;
-    border-radius: 0 0 11px 11px !important;
-    border: 3px solid #d0d0d0 !important;
-    border-top: none !important;
-    background: white !important;
-    color: #aaa !important;
-    box-shadow: none !important;
-    margin: 0 !important;
+/* 이미지: 카드 전체 채움 */
+.card-wrap img {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: contain;
+    border-radius: 14px;
+    pointer-events: none;  /* 클릭 통과 */
+    z-index: 1;
 }
-.img-sel-btn button[data-testid="stBaseButton-primary"] {
-    width: 100% !important;
-    height: 44px !important;
-    font-size: 15px !important;
-    font-weight: bold !important;
-    border-radius: 0 0 11px 11px !important;
-    border: 5px solid #667eea !important;
-    border-top: none !important;
+
+/* 테두리 오버레이 */
+.card-wrap .border-layer {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border-radius: 14px;
+    pointer-events: none;
+    z-index: 3;
+    box-sizing: border-box;
+}
+.card-wrap .border-unsel { border: 3px solid #d0d0d0; }
+.card-wrap .border-sel   { border: 5px solid #667eea;
+                            box-shadow: 0 0 0 3px rgba(102,126,234,0.2); }
+
+/* 투명 버튼: 카드 전체를 덮는 클릭 영역 */
+.card-wrap > div[data-testid="stButton"] {
+    position: absolute !important;
+    top: 0 !important; left: 0 !important;
+    width: 100% !important; height: 100% !important;
+    z-index: 2 !important;
+    margin: 0 !important; padding: 0 !important;
+}
+.card-wrap > div[data-testid="stButton"] > button {
+    position: absolute !important;
+    top: 0 !important; left: 0 !important;
+    width: 100% !important; height: 100% !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 14px !important;
+    cursor: pointer !important;
+    z-index: 2 !important;
+    padding: 0 !important;
+    opacity: 0 !important;   /* 완전 투명: 이미지만 보임 */
+}
+.card-wrap > div[data-testid="stButton"] > button:hover {
+    opacity: 0.05 !important;
     background: #667eea !important;
-    color: white !important;
-    box-shadow: none !important;
-    margin: 0 !important;
-}
-.img-unsel-btn button p,
-.img-sel-btn button p {
-    font-size: 15px !important;
-    color: inherit !important;
 }
 
 /* ── 텍스트 선택지 버튼 ── */
@@ -123,11 +144,14 @@ button[data-testid="stBaseButton-primary"] {
 }
 button[data-testid="stBaseButton-primary"] p { color: white !important; }
 button[data-testid="stBaseButton-primary"]:hover { background-color: #5a6fd6 !important; border-color: #5a6fd6 !important; }
-button[data-testid="stBaseButton-primary"]:disabled { background-color: #b0b8f0 !important; border-color: #b0b8f0 !important; }
+button[data-testid="stBaseButton-primary"]:disabled {
+    background-color: #b0b8f0 !important; border-color: #b0b8f0 !important;
+}
 button[data-testid="stBaseButton-primary"][aria-label="✅ 이걸로 할래요!"],
 button[data-testid="stBaseButton-primary"][aria-label="처음부터 다시 하기 🔄"] {
     border-radius: 50px !important; height: 120px !important;
     box-shadow: 0 6px 18px rgba(102,126,234,0.45) !important;
+    opacity: 1 !important;
 }
 
 .result-msg-box {
@@ -145,10 +169,7 @@ button[data-testid="stBaseButton-primary"][aria-label="처음부터 다시 하�
 </style>
 """, unsafe_allow_html=True)
 
-def select_image(i):
-    st.session_state.img_chosen = i
-
-def process_answer(selected_idx: int):
+def process_answer(selected_idx):
     current_q = QUIZZES[st.session_state.quiz_idx]
     if selected_idx == current_q['correct_index']:
         st.markdown(f'<div class="result-msg-box correct-box">{current_q["success"]}</div>',
@@ -180,38 +201,49 @@ if not st.session_state.complete:
 
     if current_q['type'] == 'image':
         img_sel = st.session_state.img_chosen
-        qidx = st.session_state.quiz_idx
+        qidx    = st.session_state.quiz_idx
+        b64s    = [load_b64(fn) for fn in current_q['options']]
+
         col1, col2 = st.columns(2)
         cols = [col1, col2, col1, col2]
 
-        for i, fname in enumerate(current_q['options']):
-            img = load_image(fname)
-            is_sel = (img_sel == i)
+        for i, b64 in enumerate(b64s):
+            is_sel      = (img_sel == i)
+            border_cls  = "border-sel" if is_sel else "border-unsel"
             with cols[i]:
-                # 이미지: 선택 여부에 따라 테두리 클래스 변경
-                div_cls = "img-sel" if is_sel else "img-unsel"
-                st.markdown(f'<div class="{div_cls}">', unsafe_allow_html=True)
-                st.image(img, use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
+                # .card-wrap: position:relative 기준
+                st.markdown(f"""
+                <div class="card-wrap">
+                  <img src="{b64}" />
+                  <div class="border-layer {border_cls}"></div>
+                </div>
+                """, unsafe_allow_html=True)
+                # 버튼을 card-wrap 바로 다음에 렌더링
+                # CSS로 card-wrap 안의 첫 번째 stButton을 absolute로 올림
+                if st.button(" ", key=f"img_{qidx}_{i}", use_container_width=True):
+                    st.session_state.img_chosen = i
+                    st.rerun()
 
-                # 선택 버튼: on_click 콜백으로 rerun 없이 즉시 처리
-                btn_cls = "img-sel-btn" if is_sel else "img-unsel-btn"
-                btn_label = "✅ 선택됨" if is_sel else "○ 선택하기"
-                btn_type = "primary" if is_sel else "secondary"
-                st.markdown(f'<div class="{btn_cls}">', unsafe_allow_html=True)
-                st.button(
-                    btn_label,
-                    key=f"img_{qidx}_{i}",
-                    use_container_width=True,
-                    type=btn_type,
-                    on_click=select_image,
-                    args=(i,)
-                )
-                st.markdown('</div>', unsafe_allow_html=True)
+        # card-wrap 안으로 버튼을 당기는 JS (렌더링 후 한 번만 실행)
+        st.markdown(f"""
+        <script>
+        (function fixCards() {{
+            var wraps = document.querySelectorAll('.card-wrap');
+            wraps.forEach(function(wrap) {{
+                // wrap 바로 다음 형제의 stButton 을 wrap 안으로 이동
+                var next = wrap.parentElement.nextElementSibling;
+                if (next) {{
+                    var btn = next.querySelector('[data-testid="stButton"]');
+                    if (btn) wrap.appendChild(btn);
+                }}
+            }});
+        }})();
+        setTimeout(fixCards, 200);
+        </script>
+        """, unsafe_allow_html=True)
 
         st.write("")
-        if st.button("✅ 이걸로 할래요!",
-                     key=f"confirm_img_{qidx}",
+        if st.button("✅ 이걸로 할래요!", key=f"confirm_img_{qidx}",
                      use_container_width=True, type="primary",
                      disabled=(img_sel is None)):
             process_answer(img_sel)
@@ -233,8 +265,7 @@ if not st.session_state.complete:
                         st.session_state.txt_chosen = i
                         st.rerun()
         st.write("")
-        if st.button("✅ 이걸로 할래요!",
-                     key=f"confirm_txt_{st.session_state.quiz_idx}",
+        if st.button("✅ 이걸로 할래요!", key=f"confirm_txt_{st.session_state.quiz_idx}",
                      use_container_width=True, type="primary",
                      disabled=(cur is None)):
             process_answer(cur)
