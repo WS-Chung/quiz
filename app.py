@@ -60,11 +60,22 @@ iframe[title="st_balloons.balloons"] {
 /* 텍스트 선택지 버튼 */
 button[data-testid="stBaseButton-secondary"],
 button[data-testid="stBaseButton-primary"] {
-    aspect-ratio: 1 / 1 !important;
-    height: auto !important;
     font-size: 28px !important; font-weight: bold !important;
     border-radius: 16px !important; white-space: normal !important;
     word-break: keep-all !important; line-height: 1.3 !important; box-shadow: none !important;
+}
+/* 텍스트 선택지만 정사각형 */
+.txt-quiz button[data-testid="stBaseButton-secondary"],
+.txt-quiz button[data-testid="stBaseButton-primary"] {
+    aspect-ratio: 1 / 1 !important;
+    height: auto !important;
+}
+/* 다시하기 버튼: 납작하게 */
+.restart-btn button[data-testid="stBaseButton-primary"] {
+    aspect-ratio: unset !important;
+    height: 80px !important;
+    border-radius: 50px !important;
+    box-shadow: 0 6px 18px rgba(102,126,234,0.45) !important;
 }
 button[data-testid="stBaseButton-secondary"] p,
 button[data-testid="stBaseButton-primary"] p {
@@ -81,13 +92,7 @@ button[data-testid="stBaseButton-primary"] {
 button[data-testid="stBaseButton-primary"] p { color: white !important; }
 button[data-testid="stBaseButton-primary"]:hover { background-color: #5a6fd6 !important; border-color: #5a6fd6 !important; }
 button[data-testid="stBaseButton-primary"]:disabled { background-color: #b0b8f0 !important; border-color: #b0b8f0 !important; }
-.restart-btn button[data-testid="stBaseButton-primary"] {
-    aspect-ratio: unset !important;
-    width: 100% !important;
-    height: 80px !important;
-    border-radius: 50px !important;
-    box-shadow: 0 6px 18px rgba(102,126,234,0.45) !important;
-}
+
 .result-msg-box {
     padding: 22px; border-radius: 20px; font-size: 28px; font-weight: bold;
     margin: 18px auto; width: 100%; text-align: center; animation: fadeIn 0.4s ease-out;
@@ -188,6 +193,7 @@ if not st.session_state.complete:
             process_answer(clicked)
 
     else:
+        st.markdown('<div class="txt-quiz">', unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         cols = [col1, col2, col1, col2]
         txt_clicked = None
@@ -196,6 +202,7 @@ if not st.session_state.complete:
                 if st.button(option, key=f"txt_{st.session_state.quiz_idx}_{i}",
                              use_container_width=True, type="secondary"):
                     txt_clicked = i
+        st.markdown('</div>', unsafe_allow_html=True)
         if txt_clicked is not None:
             process_answer(txt_clicked)
 
