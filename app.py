@@ -53,7 +53,6 @@ def load_b64(filename: str) -> str:
 
 st.markdown("""
 <style>
-/* ══ 상단 여백 제거 ══ */
 [data-testid="stHeader"]     { display: none !important; }
 [data-testid="stToolbar"]    { display: none !important; }
 [data-testid="stDecoration"] { display: none !important; }
@@ -69,32 +68,39 @@ iframe[title="st_balloons.balloons"] {
     transform-origin: center center !important;
 }
 
-/* ══ 텍스트 퀴즈 form 스타일 ══ */
-/* form 자체 여백 제거 */
+/* form 테두리/패딩 제거 */
 [data-testid="stForm"] {
     border: none !important;
     padding: 0 !important;
     background: transparent !important;
 }
 
-/* form 안의 버튼들을 2x2 grid로 배치 */
-[data-testid="stForm"] [data-testid="stHorizontalBlock"],
-[data-testid="stForm"] > div > div {
+/* form 안의 직계 자식(버튼 4개)을 CSS grid로 2x2 배치
+   st.columns 없이 form_submit_button 4개를 그냥 나열하면
+   Streamlit이 세로로 쌓으므로, 부모 flex/grid를 덮어씀 */
+[data-testid="stForm"] > div:first-child {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
-    gap: 10px !important;
+    gap: 12px !important;
+    padding: 2px !important;
 }
 
-/* form submit 버튼: 정사각형 */
+/* form_submit_button 래퍼 */
+[data-testid="stFormSubmitButton"] {
+    width: 100% !important;
+}
+
+/* 버튼 자체: 정사각형 */
 [data-testid="stFormSubmitButton"] > button {
     width: 100% !important;
     aspect-ratio: 1 / 1 !important;
     height: auto !important;
-    font-size: clamp(14px, 4.5vw, 24px) !important;
+    min-height: 0 !important;
+    font-size: clamp(15px, 4.5vw, 26px) !important;
     font-weight: bold !important;
     border-radius: 14px !important;
     border: 3px solid #667eea !important;
-    background-color: white !important;
+    background: white !important;
     color: #667eea !important;
     white-space: normal !important;
     word-break: keep-all !important;
@@ -105,7 +111,7 @@ iframe[title="st_balloons.balloons"] {
     cursor: pointer !important;
 }
 [data-testid="stFormSubmitButton"] > button p {
-    font-size: clamp(14px, 4.5vw, 24px) !important;
+    font-size: clamp(15px, 4.5vw, 26px) !important;
     font-weight: bold !important;
     color: #667eea !important;
     line-height: 1.3 !important;
@@ -113,13 +119,13 @@ iframe[title="st_balloons.balloons"] {
 [data-testid="stFormSubmitButton"] > button:hover,
 [data-testid="stFormSubmitButton"] > button:active,
 [data-testid="stFormSubmitButton"] > button:focus {
-    background-color: white !important;
+    background: white !important;
     border-color: #667eea !important;
     box-shadow: none !important;
     outline: none !important;
 }
 
-/* ══ 다시하기 버튼 (secondary) ══ */
+/* 다시하기 버튼 */
 button[data-testid="stBaseButton-secondary"] {
     height: 72px !important;
     font-size: clamp(16px, 4vw, 22px) !important;
@@ -141,7 +147,6 @@ button[data-testid="stBaseButton-secondary"]:hover {
     background-color: #5a6fd6 !important;
 }
 
-/* ══ 정답/오답 메시지 ══ */
 .result-msg-box {
     padding: clamp(8px, 2vw, 16px);
     border-radius: 14px;
@@ -156,7 +161,6 @@ button[data-testid="stBaseButton-secondary"]:hover {
 .error-box   { background: #FFB6C1; color: #8b0000; }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
-/* ══ 결과 페이지 ══ */
 .result-section {
     background: #f0f2f6;
     border-radius: 18px;
@@ -189,7 +193,6 @@ def process_answer(selected_idx: int):
         st.session_state.complete = True
     st.rerun()
 
-# ── 제목 ──
 st.markdown(
     "<h1 style='text-align:center;color:#667eea;"
     "font-size:clamp(20px,6vw,32px);margin:0 0 2px 0;padding:0;'>"
@@ -208,7 +211,6 @@ if not st.session_state.complete:
     )
     qidx = st.session_state.quiz_idx
 
-    # ── 이미지 퀴즈 ──
     if current_q['type'] == 'image':
         b64_list = [load_b64(fn) for fn in current_q['options']]
         clicked  = clickable_images(
@@ -235,25 +237,19 @@ if not st.session_state.complete:
         if clicked > -1:
             process_answer(clicked)
 
-    # ── 텍스트 퀴즈: st.form + st.columns(2) ──
-    # st.form_submit_button은 CSS grid 안에서 aspect-ratio가 작동
-    # form submit → selected 세션에 저장 → process_answer 호출
     else:
+        # st.columns 없이 form_submit_button 4개를 나열
+        # CSS가 부모 div를 grid로 만들어서 자동 2x2 배치
         with st.form(key=f"txtform_{qidx}", border=False):
-            col1, col2 = st.columns(2, gap="small")
-            cols = [col1, col2, col1, col2]
-            submitted = [False] * 4
-            for i, option in enumerate(current_q['options']):
-                with cols[i]:
-                    submitted[i] = st.form_submit_button(
-                        option,
-                        use_container_width=True
-                    )
-        for i, s in enumerate(submitted):
+            s0 = st.form_submit_button(current_q['options'][0], use_container_width=True)
+            s1 = st.form_submit_button(current_q['options'][1], use_container_width=True)
+            s2 = st.form_submit_button(current_q['options'][2], use_container_width=True)
+            s3 = st.form_submit_button(current_q['options'][3], use_container_width=True)
+
+        for i, s in enumerate([s0, s1, s2, s3]):
             if s:
                 process_answer(i)
 
-# ── 결과 페이지 ──
 else:
     st.balloons()
     st.markdown(f"""
