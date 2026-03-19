@@ -53,61 +53,57 @@ def load_b64(filename: str) -> str:
 
 st.markdown("""
 <style>
-/* ── 전체 여백 최소화 ── */
+/* ══ 상단 여백 완전 제거 ══ */
+#root > div:first-child { padding-top: 0 !important; }
+.stApp > header { display: none !important; }
+.stApp { margin-top: 0 !important; }
+[data-testid="stHeader"] { display: none !important; height: 0 !important; }
+[data-testid="stToolbar"] { display: none !important; }
+[data-testid="stDecoration"] { display: none !important; }
 .main .block-container {
     max-width: 720px;
     margin: 0 auto;
-    padding-top: 0.3rem !important;
-    padding-bottom: 0.3rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
 }
-section[data-testid="stAppViewContainer"] > div {
-    padding-top: 0 !important;
-}
-header[data-testid="stHeader"] { display: none !important; }
 
 iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important;
     transform-origin: center center !important;
 }
 
-/* ── 텍스트 선택지 버튼 (primary) ──
-   PC: 24px 고정 / 모바일: 5vw (화면의 5%)
-   aspect-ratio로 정사각형 유지
-   hover/active 피드백 없음 (잔상 방지)          */
-button[data-testid="stBaseButton-primary"] {
-    aspect-ratio: 1 / 1 !important;
-    height: auto !important;
-    min-height: 0 !important;
-    font-size: clamp(16px, 5vw, 24px) !important;
-    font-weight: bold !important;
-    border-radius: 14px !important;
-    white-space: normal !important;
-    word-break: keep-all !important;
-    line-height: 1.2 !important;
-    box-shadow: none !important;
-    border: 3px solid #667eea !important;
-    background-color: white !important;
-    color: #667eea !important;
-    transition: none !important;
-    padding: 4px !important;
+/* ══ 텍스트 2x2 그리드 (st.columns 대신 순수 HTML) ══ */
+.txt-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 0;
+    padding: 2px;
 }
-button[data-testid="stBaseButton-primary"] p {
-    font-size: clamp(16px, 5vw, 24px) !important;
-    font-weight: bold !important;
-    line-height: 1.2 !important;
-    color: #667eea !important;
+.txt-cell {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #667eea;
+    border-radius: 14px;
+    background: white;
+    color: #667eea;
+    font-weight: bold;
+    font-size: clamp(14px, 5vw, 22px);
+    text-align: center;
+    cursor: pointer;
+    word-break: keep-all;
+    line-height: 1.3;
+    padding: 8px;
+    box-sizing: border-box;
+    transition: background 0.1s;
+    -webkit-tap-highlight-color: transparent;
 }
-button[data-testid="stBaseButton-primary"]:hover,
-button[data-testid="stBaseButton-primary"]:active,
-button[data-testid="stBaseButton-primary"]:focus {
-    background-color: white !important;
-    border-color: #667eea !important;
-    outline: none !important;
-    box-shadow: none !important;
-    color: #667eea !important;
-}
+.txt-cell:hover { background: #f0f2ff; }
+.txt-cell:active { background: #e8eaff; }
 
-/* ── 다시하기 버튼 (secondary): 납작한 pill ── */
+/* ══ 다시하기 버튼 (secondary) ══ */
 button[data-testid="stBaseButton-secondary"] {
     aspect-ratio: unset !important;
     height: 72px !important;
@@ -120,6 +116,7 @@ button[data-testid="stBaseButton-secondary"] {
     border: 3px solid #667eea !important;
     background-color: #667eea !important;
     color: white !important;
+    margin-top: 8px !important;
 }
 button[data-testid="stBaseButton-secondary"] p {
     font-size: clamp(16px, 4vw, 22px) !important;
@@ -130,11 +127,11 @@ button[data-testid="stBaseButton-secondary"]:hover {
     background-color: #5a6fd6 !important;
 }
 
-/* ── 정답/오답 메시지 ── */
+/* ══ 정답/오답 메시지 ══ */
 .result-msg-box {
-    padding: clamp(8px, 2vw, 18px);
+    padding: clamp(8px, 2vw, 16px);
     border-radius: 14px;
-    font-size: clamp(15px, 4.5vw, 22px);
+    font-size: clamp(14px, 4.5vw, 22px);
     font-weight: bold;
     margin: 8px auto;
     width: 100%;
@@ -145,7 +142,7 @@ button[data-testid="stBaseButton-secondary"]:hover {
 .error-box   { background: #FFB6C1; color: #8b0000; }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
-/* ── 결과 페이지 ── */
+/* ══ 결과 페이지 ══ */
 .result-section {
     background: #f0f2f6;
     border-radius: 18px;
@@ -155,11 +152,6 @@ button[data-testid="stBaseButton-secondary"]:hover {
     margin-bottom: 12px;
 }
 .result-text { font-weight: bold; color: #333; }
-
-/* ── 컬럼 간격 줄이기 ── */
-[data-testid="stHorizontalBlock"] {
-    gap: 8px !important;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -183,10 +175,10 @@ def process_answer(selected_idx: int):
         st.session_state.complete = True
     st.rerun()
 
-# 제목
+# ── 제목 ──
 st.markdown(
     "<h1 style='text-align:center;color:#667eea;"
-    "font-size:clamp(20px,6vw,32px);margin:0 0 4px 0;'>"
+    "font-size:clamp(20px,6vw,32px);margin:0 0 2px 0;padding:0;'>"
     "정연이 정우 퀴즈풀기 ⭐</h1>",
     unsafe_allow_html=True
 )
@@ -196,7 +188,7 @@ if not st.session_state.complete:
     st.progress(st.session_state.quiz_idx / len(QUIZZES))
     st.markdown(
         f"<p style='text-align:center;font-weight:bold;"
-        f"font-size:clamp(14px,4vw,20px);margin:4px 0 8px 0;'>"
+        f"font-size:clamp(13px,4vw,19px);margin:4px 0 8px 0;'>"
         f"Q{st.session_state.quiz_idx+1}. {current_q['title']}</p>",
         unsafe_allow_html=True
     )
@@ -205,8 +197,7 @@ if not st.session_state.complete:
     if current_q['type'] == 'image':
         qidx     = st.session_state.quiz_idx
         b64_list = [load_b64(fn) for fn in current_q['options']]
-
-        clicked = clickable_images(
+        clicked  = clickable_images(
             b64_list,
             titles=["", "", "", ""],
             div_style={
@@ -230,30 +221,43 @@ if not st.session_state.complete:
             process_answer(clicked)
 
     # ── 텍스트 퀴즈 ──
+    # st.columns 대신 순수 HTML CSS grid로 2x2 배치
+    # 클릭은 query_params 방식으로 전달
     else:
-        col1, col2 = st.columns(2, gap="small")
-        cols = [col1, col2, col1, col2]
-        txt_clicked = None
+        qidx = st.session_state.quiz_idx
+
+        # query_params로 클릭 감지
+        params = st.query_params
+        if "txt_click" in params:
+            try:
+                clicked_idx = int(params["txt_click"])
+                if params.get("txt_q") == str(qidx):
+                    st.query_params.clear()
+                    process_answer(clicked_idx)
+            except Exception:
+                st.query_params.clear()
+
+        # 2x2 HTML 그리드 렌더링
+        cells = ""
         for i, option in enumerate(current_q['options']):
-            with cols[i]:
-                if st.button(option,
-                             key=f"txt_{st.session_state.quiz_idx}_{i}",
-                             use_container_width=True,
-                             type="primary"):
-                    txt_clicked = i
-        if txt_clicked is not None:
-            process_answer(txt_clicked)
+            cells += f"""
+            <div class="txt-cell"
+                 onclick="window.location.search='?txt_click={i}&txt_q={qidx}'">
+                {option}
+            </div>"""
+        st.markdown(f'<div class="txt-grid">{cells}</div>', unsafe_allow_html=True)
 
 # ── 결과 페이지 ──
 else:
     st.balloons()
     st.markdown(f"""
         <div class="result-section">
-            <div class="result-text" style="font-size:clamp(24px,7vw,44px);">🎉 퀴즈 끝! 🎉</div>
+            <div class="result-text" style="font-size:clamp(22px,7vw,44px);">
+                🎉 퀴즈 끝! 🎉</div>
             <div class="result-text" style="font-size:clamp(14px,4vw,22px);margin:8px 0;">
                 정말 잘했어! 얘들아!</div>
-            <div class="result-text" style="font-size:clamp(20px,6vw,38px);
-                color:#667eea;margin-top:12px;">
+            <div class="result-text"
+                 style="font-size:clamp(18px,6vw,38px);color:#667eea;margin-top:10px;">
                 🌟 {len(QUIZZES)}문제 중 {st.session_state.score}개 정답! 🌟
             </div>
         </div>
