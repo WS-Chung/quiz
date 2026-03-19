@@ -179,16 +179,9 @@ if not st.session_state.complete:
             key=f"clickimg_{qidx}"
         )
 
-        # 클릭된 이미지가 있으면 선택 업데이트
-        if clicked > -1 and clicked != img_sel:
-            st.session_state.img_chosen = clicked
-            st.rerun()
-
-        st.write("")
-        if st.button("✅ 이걸로 할래요!", key=f"confirm_img_{qidx}",
-                     use_container_width=True, type="primary",
-                     disabled=(img_sel is None)):
-            process_answer(img_sel)
+        # 이미지 클릭 즉시 정답 처리
+        if clicked > -1:
+            process_answer(clicked)
 
     else:
         cur = st.session_state.txt_chosen
