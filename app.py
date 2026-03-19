@@ -2,7 +2,7 @@ import streamlit as st
 import time
 import base64
 import io
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from st_clickable_images import clickable_images
 
 st.set_page_config(page_title="정연이 정우 퀴즈풀기", page_icon="⭐", layout="centered")
@@ -51,57 +51,64 @@ def load_b64(filename: str) -> str:
     img.save(buf, format="JPEG", quality=90)
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
 
+@st.cache_resource
+def text_to_b64(text: str) -> str:
+    """텍스트를 정사각형 PNG 이미지(base64)로 변환"""
+    size = 300
+    img  = Image.new("RGB", (size, size), color=(255, 255, 255))
+    draw = ImageDraw.Draw(img)
+
+    # 테두리
+    border = 8
+    draw.rounded_rectangle(
+        [border, border, size - border, size - border],
+        radius=30,
+        outline=(102, 126, 234),
+        width=border
+    )
+
+    # 텍스트: 크기 자동 조절
+    font_size = 72
+    font = ImageFont.load_default(size=font_size)
+    # 텍스트가 박스 안에 들어올 때까지 줄임
+    max_w = size - border * 6
+    while font_size > 28:
+        font = ImageFont.load_default(size=font_size)
+        bbox = draw.textbbox((0, 0), text, font=font)
+        tw   = bbox[2] - bbox[0]
+        if tw <= max_w:
+            break
+        font_size -= 4
+
+    bbox = draw.textbbox((0, 0), text, font=font)
+    tw = bbox[2] - bbox[0]
+    th = bbox[3] - bbox[1]
+    x  = (size - tw) / 2 - bbox[0]
+    y  = (size - th) / 2 - bbox[1]
+    draw.text((x, y), text, fill=(102, 126, 234), font=font)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
 st.markdown("""
 <style>
 /* ══ 상단 여백 완전 제거 ══ */
-#root > div:first-child { padding-top: 0 !important; }
-.stApp > header { display: none !important; }
-.stApp { margin-top: 0 !important; }
-[data-testid="stHeader"] { display: none !important; height: 0 !important; }
-[data-testid="stToolbar"] { display: none !important; }
+[data-testid="stHeader"]     { display: none !important; }
+[data-testid="stToolbar"]    { display: none !important; }
 [data-testid="stDecoration"] { display: none !important; }
+.stApp > header              { display: none !important; }
 .main .block-container {
     max-width: 720px;
     margin: 0 auto;
-    padding-top: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
 }
 
 iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important;
     transform-origin: center center !important;
 }
-
-/* ══ 텍스트 2x2 그리드 (st.columns 대신 순수 HTML) ══ */
-.txt-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin: 0;
-    padding: 2px;
-}
-.txt-cell {
-    aspect-ratio: 1 / 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 3px solid #667eea;
-    border-radius: 14px;
-    background: white;
-    color: #667eea;
-    font-weight: bold;
-    font-size: clamp(14px, 5vw, 22px);
-    text-align: center;
-    cursor: pointer;
-    word-break: keep-all;
-    line-height: 1.3;
-    padding: 8px;
-    box-sizing: border-box;
-    transition: background 0.1s;
-    -webkit-tap-highlight-color: transparent;
-}
-.txt-cell:hover { background: #f0f2ff; }
-.txt-cell:active { background: #e8eaff; }
 
 /* ══ 다시하기 버튼 (secondary) ══ */
 button[data-testid="stBaseButton-secondary"] {
@@ -183,6 +190,25 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# 공통 그리드 스타일
+GRID_STYLE = {
+    "display": "grid",
+    "grid-template-columns": "1fr 1fr",
+    "gap": "10px",
+    "padding": "2px",
+}
+# 공통 카드 스타일 (테두리/피드백 없음)
+CARD_STYLE = {
+    "border": "none",
+    "border-radius": "14px",
+    "cursor": "pointer",
+    "object-fit": "contain",
+    "background": "transparent",
+    "width": "100%",
+    "aspect-ratio": "1 / 1",
+    "-webkit-tap-highlight-color": "transparent",
+}
+
 if not st.session_state.complete:
     current_q = QUIZZES[st.session_state.quiz_idx]
     st.progress(st.session_state.quiz_idx / len(QUIZZES))
@@ -193,19 +219,15 @@ if not st.session_state.complete:
         unsafe_allow_html=True
     )
 
+    qidx = st.session_state.quiz_idx
+
     # ── 이미지 퀴즈 ──
     if current_q['type'] == 'image':
-        qidx     = st.session_state.quiz_idx
         b64_list = [load_b64(fn) for fn in current_q['options']]
         clicked  = clickable_images(
             b64_list,
             titles=["", "", "", ""],
-            div_style={
-                "display": "grid",
-                "grid-template-columns": "1fr 1fr",
-                "gap": "10px",
-                "padding": "2px",
-            },
+            div_style=GRID_STYLE,
             img_style={
                 "border": "3px solid #d0d0d0",
                 "border-radius": "12px",
@@ -214,38 +236,25 @@ if not st.session_state.complete:
                 "background": "#f8f8f8",
                 "width": "100%",
                 "aspect-ratio": "1 / 1",
+                "-webkit-tap-highlight-color": "transparent",
             },
             key=f"clickimg_{qidx}"
         )
         if clicked > -1:
             process_answer(clicked)
 
-    # ── 텍스트 퀴즈 ──
-    # st.columns 대신 순수 HTML CSS grid로 2x2 배치
-    # 클릭은 query_params 방식으로 전달
+    # ── 텍스트 퀴즈: 텍스트→이미지 변환 후 clickable_images ──
     else:
-        qidx = st.session_state.quiz_idx
-
-        # query_params로 클릭 감지
-        params = st.query_params
-        if "txt_click" in params:
-            try:
-                clicked_idx = int(params["txt_click"])
-                if params.get("txt_q") == str(qidx):
-                    st.query_params.clear()
-                    process_answer(clicked_idx)
-            except Exception:
-                st.query_params.clear()
-
-        # 2x2 HTML 그리드 렌더링
-        cells = ""
-        for i, option in enumerate(current_q['options']):
-            cells += f"""
-            <div class="txt-cell"
-                 onclick="window.location.search='?txt_click={i}&txt_q={qidx}'">
-                {option}
-            </div>"""
-        st.markdown(f'<div class="txt-grid">{cells}</div>', unsafe_allow_html=True)
+        b64_list = [text_to_b64(opt) for opt in current_q['options']]
+        clicked  = clickable_images(
+            b64_list,
+            titles=["", "", "", ""],
+            div_style=GRID_STYLE,
+            img_style=CARD_STYLE,
+            key=f"clicktxt_{qidx}"
+        )
+        if clicked > -1:
+            process_answer(clicked)
 
 # ── 결과 페이지 ──
 else:
