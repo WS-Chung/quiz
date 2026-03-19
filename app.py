@@ -1,7 +1,5 @@
 import streamlit as st
 import time
-import base64
-import io
 from PIL import Image
 
 st.set_page_config(page_title="정연이 정우 퀴즈풀기", page_icon="⭐", layout="centered")
@@ -44,11 +42,8 @@ for key, val in [('quiz_idx', 0), ('score', 0), ('complete', False),
         st.session_state[key] = val
 
 @st.cache_resource
-def load_b64(filename: str) -> str:
-    img = Image.open(f"{IMAGE_DIR}/{filename}").convert("RGB")
-    buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=90)
-    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+def load_image(filename: str) -> Image.Image:
+    return Image.open(f"{IMAGE_DIR}/{filename}").convert("RGB")
 
 st.markdown("""
 <style>
@@ -57,36 +52,54 @@ iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important; transform-origin: center center !important;
 }
 
-/* ── 이미지 버튼 공통 ── */
-.img-col button[data-testid="stBaseButton-secondary"],
-.img-col button[data-testid="stBaseButton-primary"] {
-    width: 100% !important;
-    aspect-ratio: 1 / 1 !important;
-    height: auto !important;
-    min-height: 150px !important;
-    border-radius: 14px !important;
-    background-color: #f8f8f8 !important;
-    background-size: contain !important;
-    background-repeat: no-repeat !important;
-    background-position: center !important;
-    color: transparent !important;
-    padding: 0 !important;
-    margin-bottom: 10px !important;
+/* ── 이미지 카드 테두리 ── */
+.img-unsel {
+    border: 3px solid #d0d0d0;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 4px;
+    cursor: pointer;
 }
-.img-col button p { visibility: hidden !important; font-size: 0 !important; }
+.img-sel {
+    border: 5px solid #667eea;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 4px;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+    cursor: pointer;
+}
 
-/* 미선택 */
-.img-col button[data-testid="stBaseButton-secondary"] {
+/* ── 이미지 아래 선택 버튼 ── */
+.img-unsel-btn button[data-testid="stBaseButton-secondary"] {
+    width: 100% !important;
+    height: 44px !important;
+    font-size: 15px !important;
+    font-weight: bold !important;
+    border-radius: 0 0 11px 11px !important;
     border: 3px solid #d0d0d0 !important;
+    border-top: none !important;
+    background: white !important;
+    color: #aaa !important;
     box-shadow: none !important;
+    margin: 0 !important;
 }
-.img-col button[data-testid="stBaseButton-secondary"]:hover {
-    border-color: #667eea !important;
-}
-/* 선택됨 */
-.img-col button[data-testid="stBaseButton-primary"] {
+.img-sel-btn button[data-testid="stBaseButton-primary"] {
+    width: 100% !important;
+    height: 44px !important;
+    font-size: 15px !important;
+    font-weight: bold !important;
+    border-radius: 0 0 11px 11px !important;
     border: 5px solid #667eea !important;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.2) !important;
+    border-top: none !important;
+    background: #667eea !important;
+    color: white !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+}
+.img-unsel-btn button p,
+.img-sel-btn button p {
+    font-size: 15px !important;
+    color: inherit !important;
 }
 
 /* ── 텍스트 선택지 버튼 ── */
@@ -132,6 +145,9 @@ button[data-testid="stBaseButton-primary"][aria-label="처음부터 다시 하�
 </style>
 """, unsafe_allow_html=True)
 
+def select_image(i):
+    st.session_state.img_chosen = i
+
 def process_answer(selected_idx: int):
     current_q = QUIZZES[st.session_state.quiz_idx]
     if selected_idx == current_q['correct_index']:
@@ -164,41 +180,33 @@ if not st.session_state.complete:
 
     if current_q['type'] == 'image':
         img_sel = st.session_state.img_chosen
-        b64_list = [load_b64(fn) for fn in current_q['options']]
         qidx = st.session_state.quiz_idx
-
-        # ── 각 버튼에 background-image를 class명으로 1:1 매핑 ──
-        # .imgbtn-{qidx}-{i} 클래스를 버튼 wrapper div에 붙이고
-        # 해당 클래스 안의 버튼에 background-image CSS 주입
-        for i, b64 in enumerate(b64_list):
-            st.markdown(f"""
-            <style>
-            .imgbtn-{qidx}-{i} button[data-testid="stBaseButton-secondary"],
-            .imgbtn-{qidx}-{i} button[data-testid="stBaseButton-primary"] {{
-                background-image: url("{b64}") !important;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
-
         col1, col2 = st.columns(2)
         cols = [col1, col2, col1, col2]
 
-        for i in range(4):
-            btn_type = "primary" if img_sel == i else "secondary"
+        for i, fname in enumerate(current_q['options']):
+            img = load_image(fname)
+            is_sel = (img_sel == i)
             with cols[i]:
-                # wrapper div에 고유 클래스 부여 → CSS가 정확히 이 버튼만 타겟
-                st.markdown(
-                    f'<div class="img-col imgbtn-{qidx}-{i}">',
-                    unsafe_allow_html=True
-                )
-                if st.button(
-                    " ",
+                # 이미지: 선택 여부에 따라 테두리 클래스 변경
+                div_cls = "img-sel" if is_sel else "img-unsel"
+                st.markdown(f'<div class="{div_cls}">', unsafe_allow_html=True)
+                st.image(img, use_container_width=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+
+                # 선택 버튼: on_click 콜백으로 rerun 없이 즉시 처리
+                btn_cls = "img-sel-btn" if is_sel else "img-unsel-btn"
+                btn_label = "✅ 선택됨" if is_sel else "○ 선택하기"
+                btn_type = "primary" if is_sel else "secondary"
+                st.markdown(f'<div class="{btn_cls}">', unsafe_allow_html=True)
+                st.button(
+                    btn_label,
                     key=f"img_{qidx}_{i}",
                     use_container_width=True,
-                    type=btn_type
-                ):
-                    st.session_state.img_chosen = i
-                    st.rerun()
+                    type=btn_type,
+                    on_click=select_image,
+                    args=(i,)
+                )
                 st.markdown('</div>', unsafe_allow_html=True)
 
         st.write("")
