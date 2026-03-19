@@ -53,32 +53,50 @@ def load_b64(filename: str) -> str:
 
 st.markdown("""
 <style>
-.main .block-container { max-width: 760px; margin: 0 auto; padding-top: 0.5rem; }
+/* ── 전체 여백 최소화 ── */
+.main .block-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding-top: 0.3rem !important;
+    padding-bottom: 0.3rem !important;
+}
+section[data-testid="stAppViewContainer"] > div {
+    padding-top: 0 !important;
+}
+header[data-testid="stHeader"] { display: none !important; }
+
 iframe[title="st_balloons.balloons"] {
-    transform: scale(0.5) !important; transform-origin: center center !important;
+    transform: scale(0.5) !important;
+    transform-origin: center center !important;
 }
 
-/* ── 텍스트 선택지 버튼 (primary): 정사각형 ── */
+/* ── 텍스트 선택지 버튼 (primary) ──
+   PC: 24px 고정 / 모바일: 5vw (화면의 5%)
+   aspect-ratio로 정사각형 유지
+   hover/active 피드백 없음 (잔상 방지)          */
 button[data-testid="stBaseButton-primary"] {
     aspect-ratio: 1 / 1 !important;
     height: auto !important;
-    font-size: 4vw !important;
+    min-height: 0 !important;
+    font-size: clamp(16px, 5vw, 24px) !important;
     font-weight: bold !important;
-    border-radius: 16px !important;
+    border-radius: 14px !important;
     white-space: normal !important;
     word-break: keep-all !important;
-    line-height: 1.3 !important;
+    line-height: 1.2 !important;
     box-shadow: none !important;
-    border: 4px solid #667eea !important;
+    border: 3px solid #667eea !important;
     background-color: white !important;
     color: #667eea !important;
     transition: none !important;
+    padding: 4px !important;
 }
 button[data-testid="stBaseButton-primary"] p {
-    font-size: 4vw !important; font-weight: bold !important;
-    line-height: 1.3 !important; color: #667eea !important;
+    font-size: clamp(16px, 5vw, 24px) !important;
+    font-weight: bold !important;
+    line-height: 1.2 !important;
+    color: #667eea !important;
 }
-/* hover/active 시 시각적 피드백 없음 (잔상 방지) */
 button[data-testid="stBaseButton-primary"]:hover,
 button[data-testid="stBaseButton-primary"]:active,
 button[data-testid="stBaseButton-primary"]:focus {
@@ -86,73 +104,62 @@ button[data-testid="stBaseButton-primary"]:focus {
     border-color: #667eea !important;
     outline: none !important;
     box-shadow: none !important;
+    color: #667eea !important;
 }
 
 /* ── 다시하기 버튼 (secondary): 납작한 pill ── */
 button[data-testid="stBaseButton-secondary"] {
     aspect-ratio: unset !important;
-    height: 80px !important;
-    font-size: 22px !important;
+    height: 72px !important;
+    font-size: clamp(16px, 4vw, 22px) !important;
     font-weight: bold !important;
     border-radius: 50px !important;
     white-space: normal !important;
-    word-break: keep-all !important;
     line-height: 1.3 !important;
-    box-shadow: 0 6px 18px rgba(102,126,234,0.45) !important;
-    border: 4px solid #667eea !important;
+    box-shadow: 0 5px 15px rgba(102,126,234,0.4) !important;
+    border: 3px solid #667eea !important;
     background-color: #667eea !important;
     color: white !important;
 }
 button[data-testid="stBaseButton-secondary"] p {
-    font-size: 22px !important; font-weight: bold !important;
-    line-height: 1.3 !important; color: white !important;
+    font-size: clamp(16px, 4vw, 22px) !important;
+    font-weight: bold !important;
+    color: white !important;
 }
-button[data-testid="stBaseButton-secondary"]:hover { background-color: #5a6fd6 !important; }
-button[data-testid="stBaseButton-secondary"]:disabled { background-color: #b0b8f0 !important; border-color: #b0b8f0 !important; }
+button[data-testid="stBaseButton-secondary"]:hover {
+    background-color: #5a6fd6 !important;
+}
 
-/* ── 제목: 모바일 반응형 ── */
-h1 { font-size: clamp(18px, 5vw, 32px) !important; }
-h3 { font-size: clamp(14px, 3.5vw, 22px) !important; }
-
-/* ── 정답/오답 메시지: 모바일에서 작게 ── */
+/* ── 정답/오답 메시지 ── */
 .result-msg-box {
-    padding: clamp(10px, 2vw, 22px);
-    border-radius: 16px;
-    font-size: clamp(14px, 4vw, 24px);
+    padding: clamp(8px, 2vw, 18px);
+    border-radius: 14px;
+    font-size: clamp(15px, 4.5vw, 22px);
     font-weight: bold;
-    margin: 10px auto;
+    margin: 8px auto;
     width: 100%;
     text-align: center;
-    animation: fadeIn 0.4s ease-out;
+    animation: fadeIn 0.3s ease-out;
 }
 .correct-box { background: #90EE90; color: #2d5016; }
 .error-box   { background: #FFB6C1; color: #8b0000; }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
-/* ── 모바일 반응형 ── */
-@media (max-width: 480px) {
-    button[data-testid="stBaseButton-primary"] {
-        font-size: 3.5vw !important;
-        border-radius: 10px !important;
-        border-width: 3px !important;
-    }
-    button[data-testid="stBaseButton-primary"] p {
-        font-size: 3.5vw !important;
-    }
-    button[data-testid="stBaseButton-secondary"] {
-        height: 60px !important;
-        font-size: 16px !important;
-    }
-    button[data-testid="stBaseButton-secondary"] p {
-        font-size: 16px !important;
-    }
-}
+/* ── 결과 페이지 ── */
 .result-section {
-    background: #f0f2f6; border-radius: 20px;
-    padding: clamp(20px, 4vw, 40px) clamp(15px, 3vw, 30px);
-    width: 100%; text-align: center; margin-bottom: 16px;
+    background: #f0f2f6;
+    border-radius: 18px;
+    padding: clamp(16px, 4vw, 36px);
+    width: 100%;
+    text-align: center;
+    margin-bottom: 12px;
 }
 .result-text { font-weight: bold; color: #333; }
+
+/* ── 컬럼 간격 줄이기 ── */
+[data-testid="stHorizontalBlock"] {
+    gap: 8px !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -176,57 +183,41 @@ def process_answer(selected_idx: int):
         st.session_state.complete = True
     st.rerun()
 
-st.markdown("<h1 style='text-align:center;color:#667eea;font-size:clamp(20px,5vw,34px);'>정연이 정우 퀴즈풀기 ⭐</h1>",
-            unsafe_allow_html=True)
+# 제목
+st.markdown(
+    "<h1 style='text-align:center;color:#667eea;"
+    "font-size:clamp(20px,6vw,32px);margin:0 0 4px 0;'>"
+    "정연이 정우 퀴즈풀기 ⭐</h1>",
+    unsafe_allow_html=True
+)
 
 if not st.session_state.complete:
     current_q = QUIZZES[st.session_state.quiz_idx]
     st.progress(st.session_state.quiz_idx / len(QUIZZES))
     st.markdown(
-        f"<h3 style='text-align:center;font-size:clamp(13px,3.5vw,20px);'>Q{st.session_state.quiz_idx+1}. {current_q['title']}</h3>",
-        unsafe_allow_html=True)
+        f"<p style='text-align:center;font-weight:bold;"
+        f"font-size:clamp(14px,4vw,20px);margin:4px 0 8px 0;'>"
+        f"Q{st.session_state.quiz_idx+1}. {current_q['title']}</p>",
+        unsafe_allow_html=True
+    )
 
+    # ── 이미지 퀴즈 ──
     if current_q['type'] == 'image':
-        img_sel  = st.session_state.img_chosen
         qidx     = st.session_state.quiz_idx
         b64_list = [load_b64(fn) for fn in current_q['options']]
 
-        # 선택된 이미지 테두리 스타일
-        img_styles = []
-        for i in range(4):
-            if i == img_sel:
-                img_styles.append({
-                    "border": "5px solid #667eea",
-                    "border-radius": "14px",
-                    "box-shadow": "0 0 0 3px rgba(102,126,234,0.2)",
-                    "cursor": "pointer",
-                    "object-fit": "contain",
-                    "background": "#f0f2ff",
-                    "width": "100%",
-                })
-            else:
-                img_styles.append({
-                    "border": "3px solid #d0d0d0",
-                    "border-radius": "14px",
-                    "cursor": "pointer",
-                    "object-fit": "contain",
-                    "background": "#f8f8f8",
-                    "width": "100%",
-                })
-
-        # clickable_images: 이미지 클릭 → 인덱스 반환 (-1: 미클릭)
         clicked = clickable_images(
             b64_list,
             titles=["", "", "", ""],
             div_style={
                 "display": "grid",
                 "grid-template-columns": "1fr 1fr",
-                "gap": "12px",
-                "padding": "4px",
+                "gap": "10px",
+                "padding": "2px",
             },
             img_style={
                 "border": "3px solid #d0d0d0",
-                "border-radius": "14px",
+                "border-radius": "12px",
                 "cursor": "pointer",
                 "object-fit": "contain",
                 "background": "#f8f8f8",
@@ -235,35 +226,38 @@ if not st.session_state.complete:
             },
             key=f"clickimg_{qidx}"
         )
-
-        # 이미지 클릭 즉시 정답 처리
         if clicked > -1:
             process_answer(clicked)
 
+    # ── 텍스트 퀴즈 ──
     else:
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2, gap="small")
         cols = [col1, col2, col1, col2]
         txt_clicked = None
         for i, option in enumerate(current_q['options']):
             with cols[i]:
-                if st.button(option, key=f"txt_{st.session_state.quiz_idx}_{i}",
-                             use_container_width=True, type="primary"):
+                if st.button(option,
+                             key=f"txt_{st.session_state.quiz_idx}_{i}",
+                             use_container_width=True,
+                             type="primary"):
                     txt_clicked = i
         if txt_clicked is not None:
             process_answer(txt_clicked)
 
+# ── 결과 페이지 ──
 else:
     st.balloons()
     st.markdown(f"""
         <div class="result-section">
-            <h1 class="result-text" style="font-size:50px;">🎉 퀴즈 끝! 🎉</h1>
-            <h2 class="result-text" style="font-size:30px;">정말 잘했어! 얘들아!</h2>
-            <h1 class="result-text" style="font-size:45px;color:#667eea;margin-top:20px;">
+            <div class="result-text" style="font-size:clamp(24px,7vw,44px);">🎉 퀴즈 끝! 🎉</div>
+            <div class="result-text" style="font-size:clamp(14px,4vw,22px);margin:8px 0;">
+                정말 잘했어! 얘들아!</div>
+            <div class="result-text" style="font-size:clamp(20px,6vw,38px);
+                color:#667eea;margin-top:12px;">
                 🌟 {len(QUIZZES)}문제 중 {st.session_state.score}개 정답! 🌟
-            </h1>
+            </div>
         </div>
     """, unsafe_allow_html=True)
-    st.write("")
     if st.button("처음부터 다시 하기 🔄", key="restart",
                  use_container_width=True, type="secondary"):
         st.session_state.quiz_idx   = 0
