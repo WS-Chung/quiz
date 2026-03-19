@@ -186,11 +186,14 @@ if not st.session_state.complete:
     else:
         col1, col2 = st.columns(2)
         cols = [col1, col2, col1, col2]
+        txt_clicked = None
         for i, option in enumerate(current_q['options']):
             with cols[i]:
                 if st.button(option, key=f"txt_{st.session_state.quiz_idx}_{i}",
                              use_container_width=True, type="secondary"):
-                    process_answer(i)
+                    txt_clicked = i
+        if txt_clicked is not None:
+            process_answer(txt_clicked)
 
 else:
     st.balloons()
