@@ -81,9 +81,11 @@ button[data-testid="stBaseButton-primary"] {
 button[data-testid="stBaseButton-primary"] p { color: white !important; }
 button[data-testid="stBaseButton-primary"]:hover { background-color: #5a6fd6 !important; border-color: #5a6fd6 !important; }
 button[data-testid="stBaseButton-primary"]:disabled { background-color: #b0b8f0 !important; border-color: #b0b8f0 !important; }
-button[data-testid="stBaseButton-primary"][aria-label="✅ 이걸로 할래요!"],
 button[data-testid="stBaseButton-primary"][aria-label="처음부터 다시 하기 🔄"] {
-    border-radius: 50px !important; height: 120px !important;
+    aspect-ratio: unset !important;
+    width: 100% !important;
+    height: 120px !important;
+    border-radius: 50px !important;
     box-shadow: 0 6px 18px rgba(102,126,234,0.45) !important;
 }
 .result-msg-box {
