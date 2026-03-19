@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import time
 import base64
 import io
@@ -50,40 +51,106 @@ def load_b64(filename: str) -> str:
     img.save(buf, format="JPEG", quality=90)
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
 
+def image_grid_component(b64_list: list, selected: int) -> int | None:
+    """
+    st.components.v1.html 로 이미지 그리드를 렌더링.
+    - 이미지 클릭 → Streamlit.setComponentValue(idx) 호출
+    - Streamlit이 반환값으로 받아 Python에서 처리
+    - selected: 현재 선택된 인덱스 (-1이면 미선택)
+    """
+    sel = selected if selected is not None else -1
+    imgs_js = "[" + ",".join(f'"{b}"' for b in b64_list) + "]"
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <style>
+      * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+      body {{ background: transparent; font-family: sans-serif; }}
+      .grid {{
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 4px;
+      }}
+      .card {{
+        border: 3px solid #d0d0d0;
+        border-radius: 14px;
+        overflow: hidden;
+        cursor: pointer;
+        background: #f8f8f8;
+        aspect-ratio: 1 / 1;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }}
+      .card:hover {{ border-color: #667eea; }}
+      .card.selected {{
+        border: 5px solid #667eea;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+      }}
+      .card img {{
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        pointer-events: none;
+      }}
+    </style>
+    </head>
+    <body>
+    <div class="grid" id="grid"></div>
+    <script>
+      // Streamlit 컴포넌트 API 로드
+      window.addEventListener('message', function(e) {{
+        if (e.data.type === 'streamlit:render') {{
+          init();
+        }}
+      }});
+
+      var images  = {imgs_js};
+      var current = {sel};
+
+      function init() {{
+        var grid = document.getElementById('grid');
+        grid.innerHTML = '';
+        images.forEach(function(src, idx) {{
+          var card = document.createElement('div');
+          card.className = 'card' + (idx === current ? ' selected' : '');
+          var img = document.createElement('img');
+          img.src = src;
+          card.appendChild(img);
+          card.addEventListener('click', function() {{
+            // 모든 카드 선택 해제
+            document.querySelectorAll('.card').forEach(function(c) {{
+              c.classList.remove('selected');
+            }});
+            card.classList.add('selected');
+            current = idx;
+            // Streamlit에 선택값 전달 (공식 API)
+            Streamlit.setComponentValue(idx);
+          }});
+          grid.appendChild(card);
+        }});
+        Streamlit.setFrameHeight(document.body.scrollHeight);
+      }}
+
+      // 즉시 초기화도 실행 (render 이벤트가 늦을 경우 대비)
+      document.addEventListener('DOMContentLoaded', init);
+      setTimeout(init, 100);
+    </script>
+    </body>
+    </html>
+    """
+    # components.html의 반환값 = Streamlit.setComponentValue()로 전달한 값
+    result = components.html(html, height=430, scrolling=False)
+    return result
+
 st.markdown("""
 <style>
 .main .block-container { max-width: 760px; margin: 0 auto; padding-top: 1rem; }
 iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important; transform-origin: center center !important;
 }
-
-/* 이미지 카드 */
-.img-card-label {
-    display: block;
-    cursor: pointer;
-    border-radius: 14px;
-    overflow: hidden;
-    border: 3px solid #d0d0d0;
-    background: #f8f8f8;
-    transition: border-color 0.15s, box-shadow 0.15s;
-    margin-bottom: 4px;
-}
-.img-card-label:hover { border-color: #667eea; }
-.img-card-label.selected {
-    border: 5px solid #667eea;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
-}
-.img-card-label img {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    object-fit: contain;
-    display: block;
-}
-
-/* radio 완전히 숨김 */
-div[data-testid="stRadio"] { display: none !important; }
-
-/* 텍스트 선택지 버튼 */
 button[data-testid="stBaseButton-secondary"],
 button[data-testid="stBaseButton-primary"] {
     height: 110px !important; font-size: 28px !important; font-weight: bold !important;
@@ -160,70 +227,13 @@ if not st.session_state.complete:
         qidx     = st.session_state.quiz_idx
         b64_list = [load_b64(fn) for fn in current_q['options']]
 
-        # ── 숨겨진 radio: 값 저장 역할 ──
-        radio_val = st.radio(
-            "img_radio",
-            options=[0, 1, 2, 3],
-            index=img_sel if img_sel is not None else 0,
-            key=f"radio_{qidx}",
-            horizontal=True
-        )
+        # components.html 이미지 그리드 — 클릭 시 인덱스 반환
+        clicked = image_grid_component(b64_list, img_sel)
 
-        # radio 변경 감지 → img_chosen 업데이트
-        # img_chosen=None 이면 첫 로딩(index=0 자동 선택)이므로 무시
-        if img_sel is None and radio_val != 0:
-            st.session_state.img_chosen = radio_val
+        # 클릭된 값이 있고 이전과 다르면 선택 업데이트
+        if clicked is not None and clicked != img_sel:
+            st.session_state.img_chosen = clicked
             st.rerun()
-        elif img_sel is not None and radio_val != img_sel:
-            st.session_state.img_chosen = radio_val
-            st.rerun()
-
-        # ── 이미지 카드 2×2 ──
-        col1, col2 = st.columns(2)
-        cols = [col1, col2, col1, col2]
-        for i, b64 in enumerate(b64_list):
-            sel_class = "selected" if img_sel == i else ""
-            # 카드에 data-idx 부여 → JS가 순서 기반으로 radio 클릭
-            with cols[i]:
-                st.markdown(f"""
-                <label class="img-card-label {sel_class}" data-imgidx="{i}">
-                    <img src="{b64}" />
-                </label>
-                """, unsafe_allow_html=True)
-
-        # ── JS: label 클릭 → 해당 순서의 radio input 직접 클릭 ──
-        # label for 연결 대신, 이미지 label의 onclick으로
-        # 부모 document의 radio input을 순서로 찾아 click()
-        st.markdown(f"""
-        <script>
-        (function() {{
-            function attachHandlers() {{
-                var doc = window.parent.document;
-                var labels = doc.querySelectorAll('.img-card-label[data-imgidx]');
-                if (labels.length === 0) {{
-                    setTimeout(attachHandlers, 100);
-                    return;
-                }}
-                labels.forEach(function(label) {{
-                    // 중복 등록 방지
-                    if (label.dataset.bound) return;
-                    label.dataset.bound = '1';
-                    label.addEventListener('click', function(e) {{
-                        var idx = parseInt(label.getAttribute('data-imgidx'));
-                        // stRadio 안의 radio input들을 순서대로 가져옴
-                        var radios = doc.querySelectorAll(
-                            '[data-testid="stRadio"] input[type="radio"]'
-                        );
-                        if (radios[idx]) {{
-                            radios[idx].click();
-                        }}
-                    }});
-                }});
-            }}
-            attachHandlers();
-        }})();
-        </script>
-        """, unsafe_allow_html=True)
 
         st.write("")
         if st.button("✅ 이걸로 할래요!",
