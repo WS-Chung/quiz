@@ -69,41 +69,54 @@ iframe[title="st_balloons.balloons"] {
     transform-origin: center center !important;
 }
 
-/* ══ 텍스트 선택지 버튼 (primary)
-   핵심: height를 작은 고정값으로 → 모바일에서 2x2 유지
-   PC에서는 너비가 넓어서 자동으로 충분히 큰 크기
-   ══ */
-button[data-testid="stBaseButton-primary"] {
+/* ══ 텍스트 퀴즈 form 스타일 ══ */
+/* form 자체 여백 제거 */
+[data-testid="stForm"] {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+/* form 안의 버튼들을 2x2 grid로 배치 */
+[data-testid="stForm"] [data-testid="stHorizontalBlock"],
+[data-testid="stForm"] > div > div {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+}
+
+/* form submit 버튼: 정사각형 */
+[data-testid="stFormSubmitButton"] > button {
     width: 100% !important;
-    height: 130px !important;
-    font-size: clamp(14px, 4vw, 22px) !important;
+    aspect-ratio: 1 / 1 !important;
+    height: auto !important;
+    font-size: clamp(14px, 4.5vw, 24px) !important;
     font-weight: bold !important;
     border-radius: 14px !important;
+    border: 3px solid #667eea !important;
+    background-color: white !important;
+    color: #667eea !important;
     white-space: normal !important;
     word-break: keep-all !important;
     line-height: 1.3 !important;
     box-shadow: none !important;
-    border: 3px solid #667eea !important;
-    background-color: white !important;
-    color: #667eea !important;
-    transition: none !important;
     padding: 8px !important;
+    transition: none !important;
+    cursor: pointer !important;
 }
-button[data-testid="stBaseButton-primary"] p {
-    font-size: clamp(14px, 4vw, 22px) !important;
+[data-testid="stFormSubmitButton"] > button p {
+    font-size: clamp(14px, 4.5vw, 24px) !important;
     font-weight: bold !important;
-    line-height: 1.3 !important;
     color: #667eea !important;
+    line-height: 1.3 !important;
 }
-/* 피드백 없음 */
-button[data-testid="stBaseButton-primary"]:hover,
-button[data-testid="stBaseButton-primary"]:active,
-button[data-testid="stBaseButton-primary"]:focus {
+[data-testid="stFormSubmitButton"] > button:hover,
+[data-testid="stFormSubmitButton"] > button:active,
+[data-testid="stFormSubmitButton"] > button:focus {
     background-color: white !important;
     border-color: #667eea !important;
-    outline: none !important;
     box-shadow: none !important;
-    color: #667eea !important;
+    outline: none !important;
 }
 
 /* ══ 다시하기 버튼 (secondary) ══ */
@@ -112,7 +125,6 @@ button[data-testid="stBaseButton-secondary"] {
     font-size: clamp(16px, 4vw, 22px) !important;
     font-weight: bold !important;
     border-radius: 50px !important;
-    white-space: normal !important;
     line-height: 1.3 !important;
     box-shadow: 0 5px 15px rgba(102,126,234,0.4) !important;
     border: 3px solid #667eea !important;
@@ -223,20 +235,23 @@ if not st.session_state.complete:
         if clicked > -1:
             process_answer(clicked)
 
-    # ── 텍스트 퀴즈: st.columns + st.button (가장 단순하고 안정적) ──
+    # ── 텍스트 퀴즈: st.form + st.columns(2) ──
+    # st.form_submit_button은 CSS grid 안에서 aspect-ratio가 작동
+    # form submit → selected 세션에 저장 → process_answer 호출
     else:
-        col1, col2 = st.columns(2, gap="small")
-        cols = [col1, col2, col1, col2]
-        txt_clicked = None
-        for i, option in enumerate(current_q['options']):
-            with cols[i]:
-                if st.button(option,
-                             key=f"txt_{qidx}_{i}",
-                             use_container_width=True,
-                             type="primary"):
-                    txt_clicked = i
-        if txt_clicked is not None:
-            process_answer(txt_clicked)
+        with st.form(key=f"txtform_{qidx}", border=False):
+            col1, col2 = st.columns(2, gap="small")
+            cols = [col1, col2, col1, col2]
+            submitted = [False] * 4
+            for i, option in enumerate(current_q['options']):
+                with cols[i]:
+                    submitted[i] = st.form_submit_button(
+                        option,
+                        use_container_width=True
+                    )
+        for i, s in enumerate(submitted):
+            if s:
+                process_answer(i)
 
 # ── 결과 페이지 ──
 else:
