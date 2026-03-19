@@ -1,183 +1,235 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import time
 import base64
-import os
-from PIL import Image
+import io
+@@ -57,6 +56,34 @@ def load_b64(filename: str) -> str:
+iframe[title="st_balloons.balloons"] {
+    transform: scale(0.5) !important; transform-origin: center center !important;
+}
 
-# --- 1. 페이지 설정 ---
-st.set_page_config(page_title="정연이 정우 퀴즈풀기", page_icon="⭐", layout="centered")
+/* ── 이미지 카드: 클릭 가능한 label로 감쌈 ── */
+.img-card-label {
+    display: block;
+    cursor: pointer;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 3px solid #d0d0d0;
+    background: #f8f8f8;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    margin-bottom: 4px;
+}
+.img-card-label:hover { border-color: #667eea; }
+.img-card-label.selected {
+    border: 5px solid #667eea;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+}
+.img-card-label img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    display: block;
+}
 
-# --- 2. 퀴즈 데이터 (기존 데이터 유지) ---
-QUIZZES = [
-    {'id': 1, 'type': 'image', 'title': '불을 끄는 소방관이 타고 다니는 차는 뭘까?',
-     'options': ['police.jpg','119.jpg','kids.jpg','truck.jpg'],
-     'correct_index': 1,
-     'success': '딩동댕! 🎉 소방차를 어떻게 알았지?', 'failure': '땡! 소방차는 빨간색이야!'},
-    {'id': 2, 'type': 'image', 'title': '이 중에 왕자핑이 누구~게?',
-     'options': ['princeping.jpg','auroraping.jpg','heartsping.jpg','fixping.jpg'],
-     'correct_index': 0,
-     'success': '맞았어! 🎉 왕자핑을 잘 찾았어', 'failure': '땡! 왕자핑은 남자아이야!'},
-    {'id': 3, 'type': 'image', 'title': '아빠차를 찾아봐!',
-     'options': ['tucson.jpg','koleos.jpg','gwagon.jpg','sorrento.jpg'],
-     'correct_index': 3,
-     'success': '맞았어! 🎉 아빠차 이름은 쏘렌토야', 'failure': '땡! 다 비슷하게 생겼지?'}
-    # ... 텍스트 퀴즈는 생략 (기존 데이터와 동일하게 작동합니다)
-]
-# 텍스트 퀴즈 데이터 추가 (기존 코드와 동일)
-QUIZZES += [
-    {'id': 4, 'type': 'text', 'title': '아빠의 엄마는 누구~게?', 'options': ['송도할머니','수지할머니','이모','돌봄선생님'], 'correct_index': 0, 'success': '딩동댕! 🎉 송도할머니야!', 'failure': '땡! 잘 생각해 보자~'},
-    {'id': 5, 'type': 'text', 'title': '엄마의 아빠는 누구~게?', 'options': ['송도할아버지','수지할아버지','깜깜아저씨','고모부'], 'correct_index': 1, 'success': '딩동댕! 🎉 수지할아버지야!', 'failure': '땡! 엄마의 아빠는 누구지?'},
-    {'id': 6, 'type': 'text', 'title': '딸기의 색깔은?', 'options': ['노랑','초록','빨강','파랑'], 'correct_index': 2, 'success': '맞았어! 🎉 딸기는 빨간색이야!', 'failure': '땡! 딸기는 빨간색이야~'},
-    {'id': 7, 'type': 'text', 'title': '밖에서 놀고 집에오면 뭐부터 해야할까?', 'options': ['과자 먹기','유튜브 보기','손씻기','춤추기'], 'correct_index': 2, 'success': '딩동댕! 🎉 손을 깨끗이 씻자!', 'failure': '땡! 손 안 씻으면 아야해요!'}
-]
+/* radio 완전히 숨김 */
+div[data-testid="stRadio"] { display: none !important; }
 
-# --- 3. 세션 상태 초기화 ---
-for key, val in [('quiz_idx', 0), ('score', 0), ('complete', False), ('chosen_idx', None)]:
-    if key not in st.session_state:
-        st.session_state[key] = val
-
-# --- 4. 경로 및 이미지 로드 함수 ---
-IMAGE_DIR = "static/images"
-
-def get_image(filename):
-    """이미지 파일이 있는지 확인하고 로드합니다."""
-    img_path = os.path.join(IMAGE_DIR, filename)
-    if os.path.exists(img_path):
-        return Image.open(img_path)
-    else:
-        # 이미지가 없을 경우 빈 이미지 생성 (에러 방지)
-        return Image.new('RGB', (300, 300), color=(240, 240, 240))
-
-# --- 5. 커스텀 CSS (카드형 디자인) ---
-st.markdown("""
-<style>
-    /* 전체 컨테이너 정렬 */
-    .main .block-container { max-width: 800px; padding-top: 2rem; }
-
-    /* 이미지 스타일: 버튼과 붙어 보이게 테두리 설정 */
-    .stImage > img {
-        border: 4px solid #d0d0d0;
-        border-bottom: none !important;
-        border-radius: 20px 20px 0 0 !important;
-        object-fit: cover;
-        height: 250px !important;
-    }
-
-    /* 선택된 이미지의 테두리 색상 변경 */
-    .selected-img > div > div > img {
-        border-color: #667eea !important;
-        box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
-    }
-
-    /* 이미지 바로 아래 버튼 스타일 */
-    div[data-testid="stButton"] > button {
-        width: 100% !important;
-        border-radius: 0 0 20px 20px !important;
-        border: 4px solid #d0d0d0 !important;
-        border-top: none !important;
-        height: 60px !important;
-        font-size: 20px !important;
-        background-color: white !important;
-        margin-top: -5px !important;
-    }
-
-    /* 선택된 버튼 스타일 */
-    .selected-btn div[data-testid="stButton"] > button {
-        background-color: #667eea !important;
-        color: white !important;
-        border-color: #667eea !important;
-    }
-
-    /* 확인 버튼 스타일 */
-    .confirm-btn div[data-testid="stButton"] > button {
-        border-radius: 50px !important;
-        height: 80px !important;
-        font-size: 28px !important;
-        background-color: #667eea !important;
-        color: white !important;
-        margin-top: 30px !important;
-    }
+/* ── 텍스트 선택지 버튼 ── */
+button[data-testid="stBaseButton-secondary"],
+button[data-testid="stBaseButton-primary"] {
+    height: 110px !important; font-size: 28px !important; font-weight: bold !important;
+@@ -98,74 +125,6 @@ def load_b64(filename: str) -> str:
 </style>
 """, unsafe_allow_html=True)
 
-# --- 6. 퀴즈 로직 ---
-def next_quiz(selected_idx):
+def make_image_grid_html(b64_list: list, selected: int) -> str:
+    """
+    4개 이미지를 2x2 그리드로 렌더링하는 HTML 컴포넌트.
+    이미지 클릭 → postMessage로 인덱스를 부모(Streamlit)에 전달.
+    선택된 이미지는 보라색 테두리 표시.
+    """
+    imgs_js = "[" + ",".join(f'"{b}"' for b in b64_list) + "]"
+    sel_js  = str(selected) if selected is not None else "-1"
+
+    return f"""
+    <style>
+      body {{ margin:0; padding:0; background:transparent; }}
+      .grid {{
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        padding: 4px;
+      }}
+      .card {{
+        border: 3px solid #d0d0d0;
+        border-radius: 14px;
+        overflow: hidden;
+        cursor: pointer;
+        background: #f8f8f8;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        aspect-ratio: 1 / 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }}
+      .card:hover {{ border-color: #667eea; }}
+      .card.selected {{
+        border: 5px solid #667eea;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+      }}
+      .card img {{
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        pointer-events: none;
+      }}
+    </style>
+    <div class="grid" id="grid"></div>
+    <script>
+      const images  = {imgs_js};
+      const initSel = {sel_js};
+      let selected  = initSel;
+
+      const grid = document.getElementById('grid');
+      images.forEach((src, idx) => {{
+        const card = document.createElement('div');
+        card.className = 'card' + (idx === initSel ? ' selected' : '');
+        const img = document.createElement('img');
+        img.src = src;
+        card.appendChild(img);
+        card.addEventListener('click', () => {{
+          document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          selected = idx;
+          // Streamlit 부모에게 선택 인덱스 전달
+          window.parent.postMessage({{type: 'img_select', idx: idx}}, '*');
+        }});
+        grid.appendChild(card);
+      }});
+    </script>
+    """
+
+def process_answer(selected_idx: int):
     current_q = QUIZZES[st.session_state.quiz_idx]
     if selected_idx == current_q['correct_index']:
-        st.success(current_q['success'])
-        st.balloons()
-        st.session_state.score += 1
-        time.sleep(2)
-    else:
-        st.error(current_q['failure'])
-        time.sleep(2)
-    
-    st.session_state.chosen_idx = None
-    if st.session_state.quiz_idx < len(QUIZZES) - 1:
-        st.session_state.quiz_idx += 1
-    else:
-        st.session_state.complete = True
-    st.rerun()
+@@ -200,53 +159,81 @@ def process_answer(selected_idx: int):
+        img_sel = st.session_state.img_chosen
+        b64_list = [load_b64(fn) for fn in current_q['options']]
 
-st.markdown(f"<h1 style='text-align:center; color:#667eea;'>정연이 정우 퀴즈풀기 ⭐</h1>", unsafe_allow_html=True)
+        # components.html: 완전한 HTML/JS 환경 — 이미지 클릭 100% 동작
+        # postMessage 로 선택 인덱스를 전달하지만,
+        # Streamlit은 postMessage 수신이 불가 → 대신 숨겨진 버튼 4개로 수신
+        # 가장 안정적: 이미지 그리드 + 아래 숨겨진 버튼을 JS로 클릭
+        html_code = make_image_grid_html(b64_list, img_sel)
+        # ── 핵심 구조 ──
+        # 1. st.radio를 CSS로 완전히 숨김 (값 저장 역할만)
+        # 2. 이미지를 <label for="radio_id"> 로 감쌈
+        #    → 이미지 클릭 = label 클릭 = radio 선택 = Streamlit rerun
+        # 3. 선택된 이미지는 보라 테두리
 
-if not st.session_state.complete:
-    current_q = QUIZZES[st.session_state.quiz_idx]
-    st.progress(st.session_state.quiz_idx / len(QUIZZES))
-    st.markdown(f"<h2 style='text-align:center;'>Q{st.session_state.quiz_idx+1}. {current_q['title']}</h2>", unsafe_allow_html=True)
+        # 숨겨진 선택 버튼 (JS가 클릭, 사용자 눈에는 안 보임)
+        st.markdown("""
+        <style>
+        .hbtn-row { height: 0 !important; overflow: hidden; }
+        .hbtn-row button { height: 0 !important; min-height: 0 !important;
+            padding: 0 !important; border: none !important; visibility: hidden !important; }
+        </style>
+        """, unsafe_allow_html=True)
+        qidx = st.session_state.quiz_idx
 
-    col1, col2 = st.columns(2)
-    cols = [col1, col2, col1, col2]
+        # 숨겨진 radio (0~3 선택)
+        radio_val = st.radio(
+            "img_radio",
+            options=[0, 1, 2, 3],
+            index=img_sel if img_sel is not None else 0,
+            key=f"radio_{qidx}",
+            horizontal=True
+        )
 
-    # 선택지 렌더링
-    for i, option in enumerate(current_q['options']):
-        with cols[i]:
-            is_selected = (st.session_state.chosen_idx == i)
-            
-            if current_q['type'] == 'image':
-                # 1. 이미지 표시 (CSS 클래스로 선택 효과 부여)
-                img_container = st.container()
-                if is_selected:
-                    img_container.markdown('<div class="selected-img">', unsafe_allow_html=True)
-                img_container.image(get_image(option), use_container_width=True)
-                if is_selected:
-                    img_container.markdown('</div>', unsafe_allow_html=True)
+        hcols = st.columns(4)
+        hbtns = []
+        st.markdown('<div class="hbtn-row">', unsafe_allow_html=True)
+        for i in range(4):
+            with hcols[i]:
+                hbtns.append(st.button(f"h{i}", key=f"hb_{st.session_state.quiz_idx}_{i}"))
+        st.markdown('</div>', unsafe_allow_html=True)
+        # radio가 처음 로딩될 때 img_chosen=None이면 선택 안 된 상태 유지
+        # radio의 초기값(0)이 자동 선택되는 문제 → sentinel로 구분
+        if img_sel is None:
+            # 아직 아무것도 선택 안 한 상태 → radio 값 무시
+            pass
+        elif radio_val != img_sel:
+            st.session_state.img_chosen = radio_val
+            st.rerun()
 
-                # 2. 이미지 바로 아래 선택 버튼
-                btn_label = "이거야! ✅" if is_selected else f"{i+1}번 선택"
-                btn_container = st.container()
-                if is_selected:
-                    btn_container.markdown('<div class="selected-btn">', unsafe_allow_html=True)
-                if btn_container.button(btn_label, key=f"btn_{st.session_state.quiz_idx}_{i}", use_container_width=True):
-                    st.session_state.chosen_idx = i
-                    st.rerun()
-                if is_selected:
-                    btn_container.markdown('</div>', unsafe_allow_html=True)
-            else:
-                # 텍스트 퀴즈 버튼
-                btn_type = "primary" if is_selected else "secondary"
-                if st.button(option, key=f"txt_{st.session_state.quiz_idx}_{i}", use_container_width=True, type=btn_type):
-                    st.session_state.chosen_idx = i
-                    st.rerun()
+        # radio input 의 실제 DOM id 를 알아내기 위해
+        # label for 속성에 radio input id 를 연결해야 함
+        # → Streamlit radio 의 input id 패턴: "radio_{key}-{value}"
+        col1, col2 = st.columns(2)
+        cols = [col1, col2, col1, col2]
+        for i, b64 in enumerate(b64_list):
+            sel_class = "selected" if img_sel == i else ""
+            # radio input id: Streamlit 내부 패턴
+            radio_id = f"radio_{qidx}-{i}"
+            with cols[i]:
+                # label 클릭 → 연결된 radio input 클릭 → Streamlit 값 변경 → rerun
+                st.markdown(f"""
+                <label for="{radio_id}" class="img-card-label {sel_class}">
+                    <img src="{b64}" />
+                </label>
+                """, unsafe_allow_html=True)
 
-    # 확인 버튼
-    st.markdown('<div class="confirm-btn">', unsafe_allow_html=True)
-    if st.button("✅ 이걸로 결정했어요!", use_container_width=True, disabled=(st.session_state.chosen_idx is None)):
-        next_quiz(st.session_state.chosen_idx)
-    st.markdown('</div>', unsafe_allow_html=True)
+        for i, clicked in enumerate(hbtns):
+            if clicked:
+                st.session_state.img_chosen = i
+                st.rerun()
+        # radio 클릭 감지: radio_val 변화 → img_chosen 업데이트
+        if radio_val != img_sel and img_sel is not None:
+            st.session_state.img_chosen = radio_val
+            st.rerun()
 
-else:
-    # 결과 화면 (기존과 동일)
-    st.balloons()
-    st.markdown(f"""
-        <div style="text-align:center; background:#f0f2f6; padding:40px; border-radius:20px;">
-            <h1 style="font-size:50px;">🎉 퀴즈 끝! 🎉</h1>
-            <h2>{len(QUIZZES)}문제 중 {st.session_state.score}개 정답!</h2>
-        </div>
-    """, unsafe_allow_html=True)
-    if st.button("다시 하기 🔄", use_container_width=True, type="primary"):
-        st.session_state.quiz_idx = 0
-        st.session_state.score = 0
-        st.session_state.complete = False
-        st.session_state.chosen_idx = None
-        st.rerun()
+        # JS: postMessage 수신 → 해당 숨겨진 버튼 클릭
+        recv_js = """
+        # 이미지 클릭 후 img_chosen=None 상태에서 label 클릭하면
+        # radio_val이 0이 되는데, 이걸 최초 선택으로 인식해야 함
+        # → JS로 radio 변경 이벤트 감지해서 img_chosen 초기화
+        st.markdown(f"""
+        <script>
+        window.addEventListener('message', function(e) {
+            if (e.data && e.data.type === 'img_select') {
+                var idx = e.data.idx;
+                var btns = window.parent.document.querySelectorAll('.hbtn-row button');
+                if (btns[idx]) btns[idx].click();
+            }
+        });
+        (function() {{
+            // radio 변경 시 img_chosen 을 None에서 업데이트하기 위해
+            // Streamlit이 자동으로 rerun하므로 별도 처리 불필요
+            // label 클릭 → radio change → Streamlit rerun → img_chosen 갱신
+            var radios = window.parent.document.querySelectorAll(
+                'input[type="radio"][name]'
+            );
+        }})();
+        </script>
+        """
+        st.markdown(recv_js, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+
+        # 이미지 그리드 렌더링
+        components.html(html_code, height=500, scrolling=False)
+        # img_chosen이 None일 때 label 클릭 → radio_val=0 이 되는 경우 처리
+        if img_sel is None and radio_val == 0:
+            # 처음 로딩인지 클릭인지 구분 불가 → 확인 버튼 비활성으로 안전 처리
+            pass
+        elif img_sel is None and radio_val != 0:
+            st.session_state.img_chosen = radio_val
+            st.rerun()
+
+        st.write("")
+        if st.button("✅ 이걸로 할래요!",
+                     key=f"confirm_img_{st.session_state.quiz_idx}",
+                     key=f"confirm_img_{qidx}",
+                     use_container_width=True, type="primary",
+                     disabled=(img_sel is None)):
+            process_answer(img_sel)
