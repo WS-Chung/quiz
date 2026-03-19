@@ -57,70 +57,7 @@ iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important; transform-origin: center center !important;
 }
 
-/* ══════════════════════════════════════
-   이미지 퀴즈 버튼
-   
-   구조:
-     div.stButton (position:relative 기준점)
-       └── button  (투명, 전체 영역 클릭)
-       └── img.over-img (position:absolute, 버튼 위를 덮음)
-       └── div.over-border (position:absolute, 테두리)
-   
-   이미지와 테두리는 ::after 대신 별도 태그로,
-   pointer-events:none 으로 클릭을 버튼에 통과시킴
-   ══════════════════════════════════════ */
-
-/* 버튼 컨테이너를 기준점으로 */
-.icard div[data-testid="stButton"] {
-    position: relative !important;
-    width: 100% !important;
-    padding-bottom: 100% !important;   /* 정사각형 높이 확보 */
-    height: 0 !important;
-    margin-bottom: 12px !important;
-}
-
-/* 투명 버튼: 전체 영역 */
-.icard div[data-testid="stButton"] > button {
-    position: absolute !important;
-    top: 0 !important; left: 0 !important;
-    width: 100% !important; height: 100% !important;
-    background: #f8f8f8 !important;
-    border-radius: 14px !important;
-    cursor: pointer !important;
-    z-index: 1 !important;
-    padding: 0 !important;
-    /* 텍스트 숨김 */
-    color: transparent !important;
-    font-size: 0 !important;
-}
-.icard div[data-testid="stButton"] > button p {
-    display: none !important;
-}
-
-/* 미선택 테두리 */
-.icard-unsel div[data-testid="stButton"] > button {
-    border: 3px solid #d0d0d0 !important;
-    box-shadow: none !important;
-}
-.icard-unsel div[data-testid="stButton"] > button:hover {
-    border-color: #667eea !important;
-}
-
-/* 선택됨 테두리 */
-.icard-sel div[data-testid="stButton"] > button {
-    border: 5px solid #667eea !important;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.2) !important;
-}
-
-/* 이미지 오버레이: 버튼 위를 덮되 클릭은 통과 */
-.icard div[data-testid="stButton"] > button::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-}
-
-/* ── 텍스트 선택지 버튼 ── */
+/* 텍스트 선택지 버튼 */
 button[data-testid="stBaseButton-secondary"],
 button[data-testid="stBaseButton-primary"] {
     height: 110px !important; font-size: 28px !important; font-weight: bold !important;
@@ -141,14 +78,11 @@ button[data-testid="stBaseButton-primary"] {
 }
 button[data-testid="stBaseButton-primary"] p { color: white !important; }
 button[data-testid="stBaseButton-primary"]:hover { background-color: #5a6fd6 !important; border-color: #5a6fd6 !important; }
-button[data-testid="stBaseButton-primary"]:disabled {
-    background-color: #b0b8f0 !important; border-color: #b0b8f0 !important;
-}
+button[data-testid="stBaseButton-primary"]:disabled { background-color: #b0b8f0 !important; border-color: #b0b8f0 !important; }
 button[data-testid="stBaseButton-primary"][aria-label="✅ 이걸로 할래요!"],
 button[data-testid="stBaseButton-primary"][aria-label="처음부터 다시 하기 🔄"] {
     border-radius: 50px !important; height: 120px !important;
     box-shadow: 0 6px 18px rgba(102,126,234,0.45) !important;
-    color: white !important;
 }
 
 .result-msg-box {
@@ -201,60 +135,44 @@ if not st.session_state.complete:
         qidx    = st.session_state.quiz_idx
         b64s    = [load_b64(fn) for fn in current_q['options']]
 
-        col1, col2 = st.columns(2)
-        cols = [col1, col2, col1, col2]
+        # ── 이미지 그리드: 순수 HTML form으로 구현 ──
+        # 각 이미지를 form submit 버튼으로 감싸서 클릭 → 서버 전달
+        # Streamlit의 st.form을 사용하면 안정적으로 값 전달 가능
 
-        for i, b64 in enumerate(b64s):
-            is_sel   = (img_sel == i)
-            card_cls = "icard icard-sel" if is_sel else "icard icard-unsel"
+        with st.form(key=f"imgform_{qidx}"):
+            col1, col2 = st.columns(2)
+            cols = [col1, col2, col1, col2]
 
-            with cols[i]:
-                # 1) 버튼을 먼저 렌더링 (CSS로 정사각형 영역 확보)
-                st.markdown(f'<div class="{card_cls}">', unsafe_allow_html=True)
-                clicked = st.button(
-                    " ",
-                    key=f"img_{qidx}_{i}",
-                    use_container_width=True
+            submitted_val = None
+
+            for i, b64 in enumerate(b64s):
+                border = (
+                    "5px solid #667eea; box-shadow:0 0 0 3px rgba(102,126,234,0.2);"
+                    if img_sel == i else
+                    "3px solid #d0d0d0;"
                 )
-                st.markdown('</div>', unsafe_allow_html=True)
+                with cols[i]:
+                    # st.form_submit_button에 이미지를 HTML로 표시
+                    # 이미지는 st.image로 표시하고,
+                    # 아래 form_submit_button 클릭으로 선택
+                    img_pil = Image.open(f"{IMAGE_DIR}/{current_q['options'][i]}").convert("RGB")
+                    st.markdown(
+                        f'<div style="border:{border}border-radius:14px;'
+                        f'overflow:hidden;margin-bottom:4px;background:#f8f8f8;">',
+                        unsafe_allow_html=True
+                    )
+                    st.image(img_pil, use_container_width=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
 
-                # 2) 이미지를 버튼 바로 위에 absolute로 올리는 CSS 동적 주입
-                #    버튼 key로 구분: 해당 버튼의 부모 div 다음 형제 img를
-                #    JS로 버튼 안에 absolute 삽입
-                st.markdown(f"""
-                <img id="oi_{qidx}_{i}" src="{b64}" style="
-                    display:none;
-                    position:absolute;
-                    top:0;left:0;
-                    width:100%;height:100%;
-                    object-fit:contain;
-                    border-radius:11px;
-                    pointer-events:none;
-                    z-index:2;
-                "/>
-                <script>
-                (function(){{
-                    var img = document.getElementById('oi_{qidx}_{i}');
-                    if (!img) return;
-                    // .icard div 안의 button을 찾아서 그 부모에 img 삽입
-                    var cards = document.querySelectorAll('.icard');
-                    // i번째 카드 찾기
-                    var card = cards[{i}];
-                    if (card) {{
-                        var btnDiv = card.querySelector('[data-testid="stButton"]');
-                        if (btnDiv) {{
-                            btnDiv.style.position = 'relative';
-                            img.style.display = 'block';
-                            btnDiv.appendChild(img);
-                        }}
-                    }}
-                }})();
-                </script>
-                """, unsafe_allow_html=True)
+                    if st.form_submit_button(
+                        f"{'✅' if img_sel == i else '○'}",
+                        use_container_width=True
+                    ):
+                        submitted_val = i
 
-                if clicked:
-                    st.session_state.img_chosen = i
-                    st.rerun()
+            if submitted_val is not None:
+                st.session_state.img_chosen = submitted_val
+                st.rerun()
 
         st.write("")
         if st.button("✅ 이걸로 할래요!", key=f"confirm_img_{qidx}",
