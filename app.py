@@ -2,7 +2,7 @@ import streamlit as st
 import time
 import base64
 import io
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 from st_clickable_images import clickable_images
 
 st.set_page_config(page_title="정연이 정우 퀴즈풀기", page_icon="⭐", layout="centered")
@@ -51,58 +51,9 @@ def load_b64(filename: str) -> str:
     img.save(buf, format="JPEG", quality=90)
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
 
-def get_korean_font(size: int):
-    """한글 폰트 로드 - 레포의 fonts/ 폴더 또는 시스템 폰트 탐색"""
-    candidates = [
-        "fonts/NotoSansKR-Bold.ttf",       # 레포에 직접 포함
-        "fonts/NanumGothicBold.ttf",
-        "/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf",
-        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
-        "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
-        "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
-        "/usr/share/fonts/truetype/fonts-japanese-gothic.ttf",
-    ]
-    import os
-    for path in candidates:
-        if os.path.exists(path):
-            return ImageFont.truetype(path, size)
-    return ImageFont.load_default(size=size)
-
-@st.cache_resource
-def text_to_b64(text: str) -> str:
-    """텍스트를 정사각형 PNG 이미지(base64)로 변환 - 한글 지원"""
-    size   = 300
-    img    = Image.new("RGB", (size, size), color=(255, 255, 255))
-    draw   = ImageDraw.Draw(img)
-    border = 8
-
-    # 테두리
-    draw.rounded_rectangle(
-        [border, border, size - border, size - border],
-        radius=30, outline=(102, 126, 234), width=border
-    )
-
-    # 폰트 크기 자동 조절
-    max_w = size - border * 6
-    for font_size in range(72, 27, -4):
-        font = get_korean_font(font_size)
-        bbox = draw.textbbox((0, 0), text, font=font)
-        if (bbox[2] - bbox[0]) <= max_w:
-            break
-
-    # 가운데 정렬
-    bbox = draw.textbbox((0, 0), text, font=font)
-    x = (size - (bbox[2] - bbox[0])) / 2 - bbox[0]
-    y = (size - (bbox[3] - bbox[1])) / 2 - bbox[1]
-    draw.text((x, y), text, fill=(102, 126, 234), font=font)
-
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
-
 st.markdown("""
 <style>
-/* ══ 상단 여백 완전 제거 ══ */
+/* ══ 상단 여백 제거 ══ */
 [data-testid="stHeader"]     { display: none !important; }
 [data-testid="stToolbar"]    { display: none !important; }
 [data-testid="stDecoration"] { display: none !important; }
@@ -113,10 +64,46 @@ st.markdown("""
     padding-top: 0.4rem !important;
     padding-bottom: 0.4rem !important;
 }
-
 iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important;
     transform-origin: center center !important;
+}
+
+/* ══ 텍스트 선택지 버튼 (primary)
+   height를 vw 단위로 → 화면 너비의 절반 크기로 정사각형 유지
+   모바일(360px): 약 170px / PC(720px): 약 340px → max로 제한
+   ══ */
+button[data-testid="stBaseButton-primary"] {
+    width: 100% !important;
+    height: min(42vw, 300px) !important;
+    font-size: clamp(14px, 4.5vw, 26px) !important;
+    font-weight: bold !important;
+    border-radius: 14px !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+    line-height: 1.3 !important;
+    box-shadow: none !important;
+    border: 3px solid #667eea !important;
+    background-color: white !important;
+    color: #667eea !important;
+    transition: none !important;
+    padding: 8px !important;
+}
+button[data-testid="stBaseButton-primary"] p {
+    font-size: clamp(14px, 4.5vw, 26px) !important;
+    font-weight: bold !important;
+    line-height: 1.3 !important;
+    color: #667eea !important;
+}
+/* 피드백 없음 */
+button[data-testid="stBaseButton-primary"]:hover,
+button[data-testid="stBaseButton-primary"]:active,
+button[data-testid="stBaseButton-primary"]:focus {
+    background-color: white !important;
+    border-color: #667eea !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: #667eea !important;
 }
 
 /* ══ 다시하기 버튼 (secondary) ══ */
@@ -199,25 +186,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 공통 그리드 스타일
-GRID_STYLE = {
-    "display": "grid",
-    "grid-template-columns": "1fr 1fr",
-    "gap": "10px",
-    "padding": "2px",
-}
-# 공통 카드 스타일 (테두리/피드백 없음)
-CARD_STYLE = {
-    "border": "none",
-    "border-radius": "14px",
-    "cursor": "pointer",
-    "object-fit": "contain",
-    "background": "transparent",
-    "width": "100%",
-    "aspect-ratio": "1 / 1",
-    "-webkit-tap-highlight-color": "transparent",
-}
-
 if not st.session_state.complete:
     current_q = QUIZZES[st.session_state.quiz_idx]
     st.progress(st.session_state.quiz_idx / len(QUIZZES))
@@ -236,7 +204,12 @@ if not st.session_state.complete:
         clicked  = clickable_images(
             b64_list,
             titles=["", "", "", ""],
-            div_style=GRID_STYLE,
+            div_style={
+                "display": "grid",
+                "grid-template-columns": "1fr 1fr",
+                "gap": "10px",
+                "padding": "2px",
+            },
             img_style={
                 "border": "3px solid #d0d0d0",
                 "border-radius": "12px",
@@ -252,18 +225,21 @@ if not st.session_state.complete:
         if clicked > -1:
             process_answer(clicked)
 
-    # ── 텍스트 퀴즈: 텍스트→이미지 변환 후 clickable_images ──
+    # ── 텍스트 퀴즈: st.button으로 한글 정상 표시 ──
+    # height를 vw 단위로 지정해 모바일에서도 2x2 유지
     else:
-        b64_list = [text_to_b64(opt) for opt in current_q['options']]
-        clicked  = clickable_images(
-            b64_list,
-            titles=["", "", "", ""],
-            div_style=GRID_STYLE,
-            img_style=CARD_STYLE,
-            key=f"clicktxt_{qidx}"
-        )
-        if clicked > -1:
-            process_answer(clicked)
+        col1, col2 = st.columns(2, gap="small")
+        cols = [col1, col2, col1, col2]
+        txt_clicked = None
+        for i, option in enumerate(current_q['options']):
+            with cols[i]:
+                if st.button(option,
+                             key=f"txt_{qidx}_{i}",
+                             use_container_width=True,
+                             type="primary"):
+                    txt_clicked = i
+        if txt_clicked is not None:
+            process_answer(txt_clicked)
 
 # ── 결과 페이지 ──
 else:
@@ -272,7 +248,8 @@ else:
         <div class="result-section">
             <div class="result-text" style="font-size:clamp(22px,7vw,44px);">
                 🎉 퀴즈 끝! 🎉</div>
-            <div class="result-text" style="font-size:clamp(14px,4vw,22px);margin:8px 0;">
+            <div class="result-text"
+                 style="font-size:clamp(14px,4vw,22px);margin:8px 0;">
                 정말 잘했어! 얘들아!</div>
             <div class="result-text"
                  style="font-size:clamp(18px,6vw,38px);color:#667eea;margin-top:10px;">
