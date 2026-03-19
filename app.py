@@ -57,7 +57,7 @@ iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important; transform-origin: center center !important;
 }
 
-/* ── 이미지 카드: 클릭 가능한 label로 감쌈 ── */
+/* 이미지 카드 */
 .img-card-label {
     display: block;
     cursor: pointer;
@@ -83,7 +83,7 @@ iframe[title="st_balloons.balloons"] {
 /* radio 완전히 숨김 */
 div[data-testid="stRadio"] { display: none !important; }
 
-/* ── 텍스트 선택지 버튼 ── */
+/* 텍스트 선택지 버튼 */
 button[data-testid="stBaseButton-secondary"],
 button[data-testid="stBaseButton-primary"] {
     height: 110px !important; font-size: 28px !important; font-weight: bold !important;
@@ -156,18 +156,11 @@ if not st.session_state.complete:
         unsafe_allow_html=True)
 
     if current_q['type'] == 'image':
-        img_sel = st.session_state.img_chosen
+        img_sel  = st.session_state.img_chosen
+        qidx     = st.session_state.quiz_idx
         b64_list = [load_b64(fn) for fn in current_q['options']]
 
-        # ── 핵심 구조 ──
-        # 1. st.radio를 CSS로 완전히 숨김 (값 저장 역할만)
-        # 2. 이미지를 <label for="radio_id"> 로 감쌈
-        #    → 이미지 클릭 = label 클릭 = radio 선택 = Streamlit rerun
-        # 3. 선택된 이미지는 보라 테두리
-
-        qidx = st.session_state.quiz_idx
-
-        # 숨겨진 radio (0~3 선택)
+        # ── 숨겨진 radio: 값 저장 역할 ──
         radio_val = st.radio(
             "img_radio",
             options=[0, 1, 2, 3],
@@ -176,60 +169,61 @@ if not st.session_state.complete:
             horizontal=True
         )
 
-        # radio가 처음 로딩될 때 img_chosen=None이면 선택 안 된 상태 유지
-        # radio의 초기값(0)이 자동 선택되는 문제 → sentinel로 구분
-        if img_sel is None:
-            # 아직 아무것도 선택 안 한 상태 → radio 값 무시
-            pass
-        elif radio_val != img_sel:
+        # radio 변경 감지 → img_chosen 업데이트
+        # img_chosen=None 이면 첫 로딩(index=0 자동 선택)이므로 무시
+        if img_sel is None and radio_val != 0:
+            st.session_state.img_chosen = radio_val
+            st.rerun()
+        elif img_sel is not None and radio_val != img_sel:
             st.session_state.img_chosen = radio_val
             st.rerun()
 
-        # radio input 의 실제 DOM id 를 알아내기 위해
-        # label for 속성에 radio input id 를 연결해야 함
-        # → Streamlit radio 의 input id 패턴: "radio_{key}-{value}"
+        # ── 이미지 카드 2×2 ──
         col1, col2 = st.columns(2)
         cols = [col1, col2, col1, col2]
         for i, b64 in enumerate(b64_list):
             sel_class = "selected" if img_sel == i else ""
-            # radio input id: Streamlit 내부 패턴
-            radio_id = f"radio_{qidx}-{i}"
+            # 카드에 data-idx 부여 → JS가 순서 기반으로 radio 클릭
             with cols[i]:
-                # label 클릭 → 연결된 radio input 클릭 → Streamlit 값 변경 → rerun
                 st.markdown(f"""
-                <label for="{radio_id}" class="img-card-label {sel_class}">
+                <label class="img-card-label {sel_class}" data-imgidx="{i}">
                     <img src="{b64}" />
                 </label>
                 """, unsafe_allow_html=True)
 
-        # radio 클릭 감지: radio_val 변화 → img_chosen 업데이트
-        if radio_val != img_sel and img_sel is not None:
-            st.session_state.img_chosen = radio_val
-            st.rerun()
-
-        # 이미지 클릭 후 img_chosen=None 상태에서 label 클릭하면
-        # radio_val이 0이 되는데, 이걸 최초 선택으로 인식해야 함
-        # → JS로 radio 변경 이벤트 감지해서 img_chosen 초기화
+        # ── JS: label 클릭 → 해당 순서의 radio input 직접 클릭 ──
+        # label for 연결 대신, 이미지 label의 onclick으로
+        # 부모 document의 radio input을 순서로 찾아 click()
         st.markdown(f"""
         <script>
         (function() {{
-            // radio 변경 시 img_chosen 을 None에서 업데이트하기 위해
-            // Streamlit이 자동으로 rerun하므로 별도 처리 불필요
-            // label 클릭 → radio change → Streamlit rerun → img_chosen 갱신
-            var radios = window.parent.document.querySelectorAll(
-                'input[type="radio"][name]'
-            );
+            function attachHandlers() {{
+                var doc = window.parent.document;
+                var labels = doc.querySelectorAll('.img-card-label[data-imgidx]');
+                if (labels.length === 0) {{
+                    setTimeout(attachHandlers, 100);
+                    return;
+                }}
+                labels.forEach(function(label) {{
+                    // 중복 등록 방지
+                    if (label.dataset.bound) return;
+                    label.dataset.bound = '1';
+                    label.addEventListener('click', function(e) {{
+                        var idx = parseInt(label.getAttribute('data-imgidx'));
+                        // stRadio 안의 radio input들을 순서대로 가져옴
+                        var radios = doc.querySelectorAll(
+                            '[data-testid="stRadio"] input[type="radio"]'
+                        );
+                        if (radios[idx]) {{
+                            radios[idx].click();
+                        }}
+                    }});
+                }});
+            }}
+            attachHandlers();
         }})();
         </script>
         """, unsafe_allow_html=True)
-
-        # img_chosen이 None일 때 label 클릭 → radio_val=0 이 되는 경우 처리
-        if img_sel is None and radio_val == 0:
-            # 처음 로딩인지 클릭인지 구분 불가 → 확인 버튼 비활성으로 안전 처리
-            pass
-        elif img_sel is None and radio_val != 0:
-            st.session_state.img_chosen = radio_val
-            st.rerun()
 
         st.write("")
         if st.button("✅ 이걸로 할래요!",
