@@ -5,41 +5,41 @@ import io
 from PIL import Image
 from st_clickable_images import clickable_images
 
-st.set_page_config(page_title="정연이 정우 퀴즈풀기", page_icon="⭐", layout="centered")
+st.set_page_config(page_title="정연 정우 퀴즈풀기", page_icon="⭐", layout="centered")
 
 QUIZZES = [
     {'id': 1, 'type': 'image', 'title': '불을 끄는 소방관이 타고 다니는 차는 뭘까?',
      'options': ['police.jpg','119.jpg','kids.jpg','truck.jpg'],
      'correct_index': 1,
-     'success': '딩동댕! 🎉 소방차를 어떻게 알았지?', 'failure': '땡! 소방차는 빨간색이야!'},
+     'success': '딩동댕! 소방차 본적 있어?', 'failure': '소방차는 빨간색이야!'},
     {'id': 2, 'type': 'image', 'title': '이 중에 왕자핑이 누구~게?',
      'options': ['princeping.jpg','auroraping.jpg','heartsping.jpg','fixping.jpg'],
      'correct_index': 0,
-     'success': '맞았어! 🎉 왕자핑을 잘 찾았어', 'failure': '땡! 왕자핑은 남자아이야!'},
+     'success': '날 알아봐줘서 고마워', 'failure': '땡! 왕자핑은 하얀색이야!'},
     {'id': 3, 'type': 'image', 'title': '아빠차를 찾아봐!',
      'options': ['tucson.jpg','koleos.jpg','gwagon.jpg','sorrento.jpg'],
      'correct_index': 3,
-     'success': '맞았어! 🎉 아빠차 이름은 쏘렌토야', 'failure': '땡! 다 비슷하게 생겼지?'},
+     'success': '맞았어! 차 이름도 알아?', 'failure': '다 비슷하게 생겨서 어렵지?'},
     {'id': 4, 'type': 'text', 'title': '아빠의 엄마는 누구~게?',
      'options': ['송도할머니','수지할머니','이모','돌봄선생님'],
      'correct_index': 0,
-     'success': '딩동댕! 🎉 송도할머니야!', 'failure': '땡! 잘 생각해 보자~'},
+     'success': '딩동댕! 잘 생각했어', 'failure': '아빠가 누구를 부를때 엄마~ 하시지?'},
     {'id': 5, 'type': 'text', 'title': '엄마의 아빠는 누구~게?',
      'options': ['송도할아버지','수지할아버지','깜깜아저씨','고모부'],
      'correct_index': 1,
-     'success': '딩동댕! 🎉 수지할아버지야!', 'failure': '땡! 엄마의 아빠는 누구지?'},
+     'success': '맞았어! 똑똑해~', 'failure': '엄마가 누구를 부를때 아빠~ 하시지??'},
     {'id': 6, 'type': 'text', 'title': '딸기의 색깔은?',
      'options': ['노랑','초록','빨강','파랑'],
      'correct_index': 2,
-     'success': '맞았어! 🎉 딸기는 빨간색이야!', 'failure': '땡! 딸기는 빨간색이야~'},
+     'success': '정우랑 정연이는 딸기 좋아해?', 'failure': '딸기는 빨간색이야~'},
     {'id': 7, 'type': 'text', 'title': '밖에서 놀고 집에오면 뭐부터 해야할까?',
      'options': ['과자 먹기','유튜브 보기','손씻기','춤추기'],
      'correct_index': 2,
-     'success': '딩동댕! 🎉 손을 깨끗이 씻자!', 'failure': '땡! 손 안 씻으면 아야해요!'},
+     'success': '얘들아~ 손 잘 씻고 있지?', 'failure': '손 안씻으면 아야~한다구'},
     {'id': 8, 'type': 'text', 'title': '이가 아프면 어디에 가야할까요?',
      'options': ['어린이집','치과','백화점','카페'],
      'correct_index': 1,
-     'success': '딩동댕! 🎉 치과 가본적 있어?', 'failure': '땡! 이가 아프면 치과에 가야해!'}
+     'success': '딩동댕! 치과 가본적 있어?', 'failure': '이가 아프면 치과에 가야해!'}
 ]
 IMAGE_DIR = "static/images"
 
@@ -200,7 +200,7 @@ def process_answer(selected_idx: int):
 st.markdown(
     "<h1 style='text-align:center;color:#667eea;"
     "font-size:clamp(20px,6vw,32px);margin:0 0 2px 0;padding:0;'>"
-    "정연이 정우 퀴즈풀기 ⭐</h1>",
+    "정연 정우 퀴즈풀기 ⭐</h1>",
     unsafe_allow_html=True
 )
 
@@ -269,7 +269,7 @@ else:
             </div>
         </div>
     """, unsafe_allow_html=True)
-    if st.button("처음부터 다시 하기 🔄", key="restart",
+    if st.button("처음부터 다시 할래", key="restart",
                  use_container_width=True, type="secondary"):
         st.session_state.quiz_idx   = 0
         st.session_state.score      = 0
