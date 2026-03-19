@@ -1,5 +1,8 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import time
+import base64
+import io
 from PIL import Image
 
 st.set_page_config(page_title="정연이 정우 퀴즈풀기", page_icon="⭐", layout="centered")
@@ -42,8 +45,11 @@ for key, val in [('quiz_idx', 0), ('score', 0), ('complete', False),
         st.session_state[key] = val
 
 @st.cache_resource
-def load_image(filename: str) -> Image.Image:
-    return Image.open(f"{IMAGE_DIR}/{filename}").convert("RGB")
+def load_b64(filename: str) -> str:
+    img = Image.open(f"{IMAGE_DIR}/{filename}").convert("RGB")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=90)
+    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
 
 st.markdown("""
 <style>
@@ -51,79 +57,32 @@ st.markdown("""
 iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important; transform-origin: center center !important;
 }
-
-/* ── 이미지 선택지: 이미지 + 선택 버튼 묶음 ── */
-/* 선택 버튼 공통 */
-.sel-btn button[data-testid="stBaseButton-secondary"],
-.sel-btn button[data-testid="stBaseButton-primary"] {
-    width: 100% !important;
-    height: 52px !important;
-    font-size: 15px !important;
-    font-weight: bold !important;
-    border-radius: 0 0 12px 12px !important;
-    margin-top: -4px !important;
-    box-shadow: none !important;
-}
-/* 미선택 */
-.sel-btn button[data-testid="stBaseButton-secondary"] {
-    border: 3px solid #d0d0d0 !important;
-    border-top: none !important;
-    background: white !important;
-    color: #888 !important;
-}
-/* 선택됨 */
-.sel-btn button[data-testid="stBaseButton-primary"] {
-    border: 4px solid #667eea !important;
-    border-top: none !important;
-    background: #667eea !important;
-    color: white !important;
-}
-
-/* 이미지에 선택 테두리 */
-.img-unsel img { border: 3px solid #d0d0d0 !important; border-radius: 12px 12px 0 0 !important; }
-.img-sel   img { border: 4px solid #667eea !important; border-radius: 12px 12px 0 0 !important; }
-
-/* ── 텍스트 선택지 버튼 ── */
 button[data-testid="stBaseButton-secondary"],
 button[data-testid="stBaseButton-primary"] {
-    height: 110px !important;
-    font-size: 28px !important;
-    font-weight: bold !important;
-    border-radius: 16px !important;
-    white-space: normal !important;
-    word-break: keep-all !important;
-    line-height: 1.3 !important;
-    box-shadow: none !important;
+    height: 110px !important; font-size: 28px !important; font-weight: bold !important;
+    border-radius: 16px !important; white-space: normal !important;
+    word-break: keep-all !important; line-height: 1.3 !important; box-shadow: none !important;
 }
 button[data-testid="stBaseButton-secondary"] p,
 button[data-testid="stBaseButton-primary"] p {
     font-size: 28px !important; font-weight: bold !important; line-height: 1.3 !important;
 }
 button[data-testid="stBaseButton-secondary"] {
-    border: 4px solid #667eea !important;
-    background-color: white !important; color: #667eea !important;
+    border: 4px solid #667eea !important; background-color: white !important; color: #667eea !important;
 }
 button[data-testid="stBaseButton-secondary"] p { color: #667eea !important; }
 button[data-testid="stBaseButton-secondary"]:hover { background-color: #f0f2ff !important; }
 button[data-testid="stBaseButton-primary"] {
-    border: 4px solid #667eea !important;
-    background-color: #667eea !important; color: white !important;
+    border: 4px solid #667eea !important; background-color: #667eea !important; color: white !important;
 }
 button[data-testid="stBaseButton-primary"] p { color: white !important; }
-button[data-testid="stBaseButton-primary"]:hover {
-    background-color: #5a6fd6 !important; border-color: #5a6fd6 !important;
-}
-button[data-testid="stBaseButton-primary"]:disabled {
-    background-color: #b0b8f0 !important; border-color: #b0b8f0 !important;
-}
-
-/* 확인 / 다시하기 pill */
+button[data-testid="stBaseButton-primary"]:hover { background-color: #5a6fd6 !important; border-color: #5a6fd6 !important; }
+button[data-testid="stBaseButton-primary"]:disabled { background-color: #b0b8f0 !important; border-color: #b0b8f0 !important; }
 button[data-testid="stBaseButton-primary"][aria-label="✅ 이걸로 할래요!"],
 button[data-testid="stBaseButton-primary"][aria-label="처음부터 다시 하기 🔄"] {
     border-radius: 50px !important; height: 120px !important;
     box-shadow: 0 6px 18px rgba(102,126,234,0.45) !important;
 }
-
 .result-msg-box {
     padding: 22px; border-radius: 20px; font-size: 28px; font-weight: bold;
     margin: 18px auto; width: 100%; text-align: center; animation: fadeIn 0.4s ease-out;
@@ -138,6 +97,74 @@ button[data-testid="stBaseButton-primary"][aria-label="처음부터 다시 하�
 .result-text { font-weight: bold; color: #333; }
 </style>
 """, unsafe_allow_html=True)
+
+def make_image_grid_html(b64_list: list, selected: int) -> str:
+    """
+    4개 이미지를 2x2 그리드로 렌더링하는 HTML 컴포넌트.
+    이미지 클릭 → postMessage로 인덱스를 부모(Streamlit)에 전달.
+    선택된 이미지는 보라색 테두리 표시.
+    """
+    imgs_js = "[" + ",".join(f'"{b}"' for b in b64_list) + "]"
+    sel_js  = str(selected) if selected is not None else "-1"
+
+    return f"""
+    <style>
+      body {{ margin:0; padding:0; background:transparent; }}
+      .grid {{
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        padding: 4px;
+      }}
+      .card {{
+        border: 3px solid #d0d0d0;
+        border-radius: 14px;
+        overflow: hidden;
+        cursor: pointer;
+        background: #f8f8f8;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        aspect-ratio: 1 / 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }}
+      .card:hover {{ border-color: #667eea; }}
+      .card.selected {{
+        border: 5px solid #667eea;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+      }}
+      .card img {{
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        pointer-events: none;
+      }}
+    </style>
+    <div class="grid" id="grid"></div>
+    <script>
+      const images  = {imgs_js};
+      const initSel = {sel_js};
+      let selected  = initSel;
+
+      const grid = document.getElementById('grid');
+      images.forEach((src, idx) => {{
+        const card = document.createElement('div');
+        card.className = 'card' + (idx === initSel ? ' selected' : '');
+        const img = document.createElement('img');
+        img.src = src;
+        card.appendChild(img);
+        card.addEventListener('click', () => {{
+          document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          selected = idx;
+          // Streamlit 부모에게 선택 인덱스 전달
+          window.parent.postMessage({{type: 'img_select', idx: idx}}, '*');
+        }});
+        grid.appendChild(card);
+      }});
+    </script>
+    """
 
 def process_answer(selected_idx: int):
     current_q = QUIZZES[st.session_state.quiz_idx]
@@ -171,32 +198,53 @@ if not st.session_state.complete:
 
     if current_q['type'] == 'image':
         img_sel = st.session_state.img_chosen
-        col1, col2 = st.columns(2)
-        cols = [col1, col2, col1, col2]
+        b64_list = [load_b64(fn) for fn in current_q['options']]
 
-        for i, fname in enumerate(current_q['options']):
-            img = load_image(fname)
-            is_sel = (img_sel == i)
-            with cols[i]:
-                # 이미지 표시 (선택 여부에 따라 테두리 CSS 클래스 변경)
-                img_cls = "img-sel" if is_sel else "img-unsel"
-                st.markdown(f'<div class="{img_cls}">', unsafe_allow_html=True)
-                st.image(img, use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
+        # components.html: 완전한 HTML/JS 환경 — 이미지 클릭 100% 동작
+        # postMessage 로 선택 인덱스를 전달하지만,
+        # Streamlit은 postMessage 수신이 불가 → 대신 숨겨진 버튼 4개로 수신
+        # 가장 안정적: 이미지 그리드 + 아래 숨겨진 버튼을 JS로 클릭
+        html_code = make_image_grid_html(b64_list, img_sel)
 
-                # 선택 버튼 (이미지 바로 아래 붙임)
-                btn_label = "✅ 선택됨" if is_sel else "○ 선택"
-                btn_type  = "primary" if is_sel else "secondary"
-                st.markdown('<div class="sel-btn">', unsafe_allow_html=True)
-                if st.button(btn_label,
-                             key=f"img_{st.session_state.quiz_idx}_{i}",
-                             use_container_width=True,
-                             type=btn_type):
-                    st.session_state.img_chosen = i
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
+        # 숨겨진 선택 버튼 (JS가 클릭, 사용자 눈에는 안 보임)
+        st.markdown("""
+        <style>
+        .hbtn-row { height: 0 !important; overflow: hidden; }
+        .hbtn-row button { height: 0 !important; min-height: 0 !important;
+            padding: 0 !important; border: none !important; visibility: hidden !important; }
+        </style>
+        """, unsafe_allow_html=True)
 
-        st.write("")
+        hcols = st.columns(4)
+        hbtns = []
+        st.markdown('<div class="hbtn-row">', unsafe_allow_html=True)
+        for i in range(4):
+            with hcols[i]:
+                hbtns.append(st.button(f"h{i}", key=f"hb_{st.session_state.quiz_idx}_{i}"))
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        for i, clicked in enumerate(hbtns):
+            if clicked:
+                st.session_state.img_chosen = i
+                st.rerun()
+
+        # JS: postMessage 수신 → 해당 숨겨진 버튼 클릭
+        recv_js = """
+        <script>
+        window.addEventListener('message', function(e) {
+            if (e.data && e.data.type === 'img_select') {
+                var idx = e.data.idx;
+                var btns = window.parent.document.querySelectorAll('.hbtn-row button');
+                if (btns[idx]) btns[idx].click();
+            }
+        });
+        </script>
+        """
+        st.markdown(recv_js, unsafe_allow_html=True)
+
+        # 이미지 그리드 렌더링
+        components.html(html_code, height=500, scrolling=False)
+
         if st.button("✅ 이걸로 할래요!",
                      key=f"confirm_img_{st.session_state.quiz_idx}",
                      use_container_width=True, type="primary",
