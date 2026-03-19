@@ -60,7 +60,9 @@ iframe[title="st_balloons.balloons"] {
 /* 텍스트 선택지 버튼 */
 button[data-testid="stBaseButton-secondary"],
 button[data-testid="stBaseButton-primary"] {
-    height: 110px !important; font-size: 28px !important; font-weight: bold !important;
+    aspect-ratio: 1 / 1 !important;
+    height: auto !important;
+    font-size: 28px !important; font-weight: bold !important;
     border-radius: 16px !important; white-space: normal !important;
     word-break: keep-all !important; line-height: 1.3 !important; box-shadow: none !important;
 }
