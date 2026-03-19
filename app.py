@@ -53,56 +53,104 @@ def load_b64(filename: str) -> str:
 
 st.markdown("""
 <style>
-.main .block-container { max-width: 760px; margin: 0 auto; padding-top: 1rem; }
+.main .block-container { max-width: 760px; margin: 0 auto; padding-top: 0.5rem; }
 iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important; transform-origin: center center !important;
 }
-/* 텍스트 선택지 버튼 */
-/* 텍스트 선택지 버튼 (primary): 정사각형 */
+
+/* ── 텍스트 선택지 버튼 (primary): 정사각형 ── */
 button[data-testid="stBaseButton-primary"] {
     aspect-ratio: 1 / 1 !important;
     height: auto !important;
-    font-size: 28px !important; font-weight: bold !important;
-    border-radius: 16px !important; white-space: normal !important;
-    word-break: keep-all !important; line-height: 1.3 !important; box-shadow: none !important;
+    font-size: 4vw !important;
+    font-weight: bold !important;
+    border-radius: 16px !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+    line-height: 1.3 !important;
+    box-shadow: none !important;
+    border: 4px solid #667eea !important;
+    background-color: white !important;
+    color: #667eea !important;
+    transition: none !important;
 }
-/* 다시하기 버튼 (secondary): 납작한 pill */
+button[data-testid="stBaseButton-primary"] p {
+    font-size: 4vw !important; font-weight: bold !important;
+    line-height: 1.3 !important; color: #667eea !important;
+}
+/* hover/active 시 시각적 피드백 없음 (잔상 방지) */
+button[data-testid="stBaseButton-primary"]:hover,
+button[data-testid="stBaseButton-primary"]:active,
+button[data-testid="stBaseButton-primary"]:focus {
+    background-color: white !important;
+    border-color: #667eea !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* ── 다시하기 버튼 (secondary): 납작한 pill ── */
 button[data-testid="stBaseButton-secondary"] {
     aspect-ratio: unset !important;
-    height: 120px !important;
-    font-size: 28px !important; font-weight: bold !important;
-    border-radius: 50px !important; white-space: normal !important;
-    word-break: keep-all !important; line-height: 1.3 !important;
+    height: 80px !important;
+    font-size: 22px !important;
+    font-weight: bold !important;
+    border-radius: 50px !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+    line-height: 1.3 !important;
     box-shadow: 0 6px 18px rgba(102,126,234,0.45) !important;
+    border: 4px solid #667eea !important;
+    background-color: #667eea !important;
+    color: white !important;
 }
-button[data-testid="stBaseButton-secondary"] p,
-button[data-testid="stBaseButton-primary"] p {
-    font-size: 28px !important; font-weight: bold !important; line-height: 1.3 !important;
+button[data-testid="stBaseButton-secondary"] p {
+    font-size: 22px !important; font-weight: bold !important;
+    line-height: 1.3 !important; color: white !important;
 }
-/* primary: 텍스트 선택지 — 흰 배경 보라 테두리 */
-button[data-testid="stBaseButton-primary"] {
-    border: 4px solid #667eea !important; background-color: white !important; color: #667eea !important;
-}
-button[data-testid="stBaseButton-primary"] p { color: #667eea !important; }
-button[data-testid="stBaseButton-primary"]:hover { background-color: #f0f2ff !important; }
-/* secondary: 다시하기 버튼 — 보라 채움 */
-button[data-testid="stBaseButton-secondary"] {
-    border: 4px solid #667eea !important; background-color: #667eea !important; color: white !important;
-}
-button[data-testid="stBaseButton-secondary"] p { color: white !important; }
-button[data-testid="stBaseButton-secondary"]:hover { background-color: #5a6fd6 !important; border-color: #5a6fd6 !important; }
+button[data-testid="stBaseButton-secondary"]:hover { background-color: #5a6fd6 !important; }
 button[data-testid="stBaseButton-secondary"]:disabled { background-color: #b0b8f0 !important; border-color: #b0b8f0 !important; }
 
+/* ── 제목: 모바일 반응형 ── */
+h1 { font-size: clamp(18px, 5vw, 32px) !important; }
+h3 { font-size: clamp(14px, 3.5vw, 22px) !important; }
+
+/* ── 정답/오답 메시지: 모바일에서 작게 ── */
 .result-msg-box {
-    padding: 22px; border-radius: 20px; font-size: 28px; font-weight: bold;
-    margin: 18px auto; width: 100%; text-align: center; animation: fadeIn 0.4s ease-out;
+    padding: clamp(10px, 2vw, 22px);
+    border-radius: 16px;
+    font-size: clamp(14px, 4vw, 24px);
+    font-weight: bold;
+    margin: 10px auto;
+    width: 100%;
+    text-align: center;
+    animation: fadeIn 0.4s ease-out;
 }
 .correct-box { background: #90EE90; color: #2d5016; }
 .error-box   { background: #FFB6C1; color: #8b0000; }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+/* ── 모바일 반응형 ── */
+@media (max-width: 480px) {
+    button[data-testid="stBaseButton-primary"] {
+        font-size: 3.5vw !important;
+        border-radius: 10px !important;
+        border-width: 3px !important;
+    }
+    button[data-testid="stBaseButton-primary"] p {
+        font-size: 3.5vw !important;
+    }
+    button[data-testid="stBaseButton-secondary"] {
+        height: 60px !important;
+        font-size: 16px !important;
+    }
+    button[data-testid="stBaseButton-secondary"] p {
+        font-size: 16px !important;
+    }
+}
 .result-section {
     background: #f0f2f6; border-radius: 20px;
-    padding: 40px 30px; width: 100%; text-align: center; margin-bottom: 20px;
+    padding: clamp(20px, 4vw, 40px) clamp(15px, 3vw, 30px);
+    width: 100%; text-align: center; margin-bottom: 16px;
 }
 .result-text { font-weight: bold; color: #333; }
 </style>
@@ -128,14 +176,14 @@ def process_answer(selected_idx: int):
         st.session_state.complete = True
     st.rerun()
 
-st.markdown("<h1 style='text-align:center;color:#667eea;'>정연이 정우 퀴즈풀기 ⭐</h1>",
+st.markdown("<h1 style='text-align:center;color:#667eea;font-size:clamp(20px,5vw,34px);'>정연이 정우 퀴즈풀기 ⭐</h1>",
             unsafe_allow_html=True)
 
 if not st.session_state.complete:
     current_q = QUIZZES[st.session_state.quiz_idx]
     st.progress(st.session_state.quiz_idx / len(QUIZZES))
     st.markdown(
-        f"<h3 style='text-align:center;'>Q{st.session_state.quiz_idx+1}. {current_q['title']}</h3>",
+        f"<h3 style='text-align:center;font-size:clamp(13px,3.5vw,20px);'>Q{st.session_state.quiz_idx+1}. {current_q['title']}</h3>",
         unsafe_allow_html=True)
 
     if current_q['type'] == 'image':
