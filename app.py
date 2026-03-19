@@ -201,7 +201,7 @@ if not st.session_state.complete:
                 if st.button(option, key=f"txt_{st.session_state.quiz_idx}_{i}",
                              use_container_width=True, type="primary"):
                     txt_clicked = i
-            if txt_clicked is not None:
+        if txt_clicked is not None:
             process_answer(txt_clicked)
 
 else:
