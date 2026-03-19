@@ -1,7 +1,5 @@
 import streamlit as st
 import time
-import base64
-import io
 from PIL import Image
 
 st.set_page_config(page_title="정연이 정우 퀴즈풀기", page_icon="⭐", layout="centered")
@@ -44,98 +42,48 @@ for key, val in [('quiz_idx', 0), ('score', 0), ('complete', False),
         st.session_state[key] = val
 
 @st.cache_resource
-def load_b64(filename: str) -> str:
-    img = Image.open(f"{IMAGE_DIR}/{filename}").convert("RGB")
-    buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=90)
-    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+def load_image(filename: str) -> Image.Image:
+    return Image.open(f"{IMAGE_DIR}/{filename}").convert("RGB")
 
-# ─────────────────────────────────────────
-# CSS
-# ─────────────────────────────────────────
 st.markdown("""
 <style>
-.main .block-container {
-    max-width: 760px;
-    margin: 0 auto;
-    padding-top: 1rem;
-}
+.main .block-container { max-width: 760px; margin: 0 auto; padding-top: 1rem; }
 iframe[title="st_balloons.balloons"] {
-    transform: scale(0.5) !important;
-    transform-origin: center center !important;
+    transform: scale(0.5) !important; transform-origin: center center !important;
 }
 
-/* ══════════════════════════════════════
-   이미지 선택지 버튼
-   st.button 안에 <img> HTML을 label로 넣어
-   버튼 자체가 이미지처럼 보이게 함
-   ══════════════════════════════════════ */
-
-/* 이미지 버튼 공통 */
-button[data-testid="stBaseButton-secondary"].img-btn,
-button[data-testid="stBaseButton-primary"].img-btn,
-/* label로 img 태그가 들어간 버튼을 찾는 대신
-   .img-col 안의 모든 버튼에 적용 */
-.img-col button[data-testid="stBaseButton-secondary"],
-.img-col button[data-testid="stBaseButton-primary"] {
+/* ── 이미지 선택지: 이미지 + 선택 버튼 묶음 ── */
+/* 선택 버튼 공통 */
+.sel-btn button[data-testid="stBaseButton-secondary"],
+.sel-btn button[data-testid="stBaseButton-primary"] {
     width: 100% !important;
-    aspect-ratio: 1 / 1 !important;
-    height: auto !important;
-    min-height: 140px !important;
-    padding: 6px !important;
-    border-radius: 14px !important;
-    background: #f8f8f8 !important;
-    cursor: pointer !important;
+    height: 52px !important;
+    font-size: 15px !important;
+    font-weight: bold !important;
+    border-radius: 0 0 12px 12px !important;
+    margin-top: -4px !important;
     box-shadow: none !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    overflow: hidden !important;
-    margin-bottom: 10px !important;
 }
-
-/* 미선택: 회색 테두리 */
-.img-col button[data-testid="stBaseButton-secondary"] {
+/* 미선택 */
+.sel-btn button[data-testid="stBaseButton-secondary"] {
     border: 3px solid #d0d0d0 !important;
+    border-top: none !important;
+    background: white !important;
+    color: #888 !important;
 }
-.img-col button[data-testid="stBaseButton-secondary"]:hover {
-    border-color: #667eea !important;
-    background: #f0f2ff !important;
-}
-
-/* 선택됨: 보라 테두리 */
-.img-col button[data-testid="stBaseButton-primary"] {
-    border: 6px solid #667eea !important;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.2) !important;
-    background: #f0f2ff !important;
-}
-
-/* 버튼 내부 p 태그 (이미지 HTML이 들어있음) */
-.img-col button p {
-    width: 100% !important;
-    height: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 0 !important;  /* 혹시 남은 텍스트 숨김 */
+/* 선택됨 */
+.sel-btn button[data-testid="stBaseButton-primary"] {
+    border: 4px solid #667eea !important;
+    border-top: none !important;
+    background: #667eea !important;
+    color: white !important;
 }
 
-/* 버튼 내부 img */
-.img-col button img {
-    width: 100% !important;
-    height: auto !important;
-    max-height: 100% !important;
-    object-fit: contain !important;
-    border-radius: 10px !important;
-    display: block !important;
-    pointer-events: none !important;
-}
+/* 이미지에 선택 테두리 */
+.img-unsel img { border: 3px solid #d0d0d0 !important; border-radius: 12px 12px 0 0 !important; }
+.img-sel   img { border: 4px solid #667eea !important; border-radius: 12px 12px 0 0 !important; }
 
-/* ══════════════════════════════════════
-   텍스트 선택지 버튼
-   ══════════════════════════════════════ */
+/* ── 텍스트 선택지 버튼 ── */
 button[data-testid="stBaseButton-secondary"],
 button[data-testid="stBaseButton-primary"] {
     height: 110px !important;
@@ -149,39 +97,30 @@ button[data-testid="stBaseButton-primary"] {
 }
 button[data-testid="stBaseButton-secondary"] p,
 button[data-testid="stBaseButton-primary"] p {
-    font-size: 28px !important;
-    font-weight: bold !important;
-    line-height: 1.3 !important;
+    font-size: 28px !important; font-weight: bold !important; line-height: 1.3 !important;
 }
 button[data-testid="stBaseButton-secondary"] {
     border: 4px solid #667eea !important;
-    background-color: white !important;
-    color: #667eea !important;
+    background-color: white !important; color: #667eea !important;
 }
 button[data-testid="stBaseButton-secondary"] p { color: #667eea !important; }
 button[data-testid="stBaseButton-secondary"]:hover { background-color: #f0f2ff !important; }
-
 button[data-testid="stBaseButton-primary"] {
     border: 4px solid #667eea !important;
-    background-color: #667eea !important;
-    color: white !important;
+    background-color: #667eea !important; color: white !important;
 }
 button[data-testid="stBaseButton-primary"] p { color: white !important; }
 button[data-testid="stBaseButton-primary"]:hover {
-    background-color: #5a6fd6 !important;
-    border-color: #5a6fd6 !important;
+    background-color: #5a6fd6 !important; border-color: #5a6fd6 !important;
 }
 button[data-testid="stBaseButton-primary"]:disabled {
-    background-color: #b0b8f0 !important;
-    border-color: #b0b8f0 !important;
-    cursor: not-allowed !important;
+    background-color: #b0b8f0 !important; border-color: #b0b8f0 !important;
 }
 
 /* 확인 / 다시하기 pill */
 button[data-testid="stBaseButton-primary"][aria-label="✅ 이걸로 할래요!"],
 button[data-testid="stBaseButton-primary"][aria-label="처음부터 다시 하기 🔄"] {
-    border-radius: 50px !important;
-    height: 120px !important;
+    border-radius: 50px !important; height: 120px !important;
     box-shadow: 0 6px 18px rgba(102,126,234,0.45) !important;
 }
 
@@ -192,7 +131,6 @@ button[data-testid="stBaseButton-primary"][aria-label="처음부터 다시 하�
 .correct-box { background: #90EE90; color: #2d5016; }
 .error-box   { background: #FFB6C1; color: #8b0000; }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-
 .result-section {
     background: #f0f2f6; border-radius: 20px;
     padding: 40px 30px; width: 100%; text-align: center; margin-bottom: 20px;
@@ -231,27 +169,26 @@ if not st.session_state.complete:
         f"<h3 style='text-align:center;'>Q{st.session_state.quiz_idx+1}. {current_q['title']}</h3>",
         unsafe_allow_html=True)
 
-    # ══════════════════════════════════════
-    # 이미지 퀴즈
-    # 핵심: st.button의 label에 <img> HTML을 직접 넣음
-    # → 버튼 자체가 이미지처럼 보이고, 버튼 클릭으로 선택 처리
-    # → JS/HTML onclick 불필요, Streamlit 네이티브 동작
-    # ══════════════════════════════════════
     if current_q['type'] == 'image':
         img_sel = st.session_state.img_chosen
         col1, col2 = st.columns(2)
         cols = [col1, col2, col1, col2]
 
         for i, fname in enumerate(current_q['options']):
-            b64 = load_b64(fname)
-            # 버튼 label에 img 태그 삽입
-            img_html = f'<img src="{b64}" style="width:100%;height:auto;object-fit:contain;border-radius:10px;"/>'
-            btn_type = "primary" if img_sel == i else "secondary"
-
+            img = load_image(fname)
+            is_sel = (img_sel == i)
             with cols[i]:
-                # .img-col 클래스로 감싸서 CSS 적용
-                st.markdown('<div class="img-col">', unsafe_allow_html=True)
-                if st.button(img_html,
+                # 이미지 표시 (선택 여부에 따라 테두리 CSS 클래스 변경)
+                img_cls = "img-sel" if is_sel else "img-unsel"
+                st.markdown(f'<div class="{img_cls}">', unsafe_allow_html=True)
+                st.image(img, use_container_width=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+
+                # 선택 버튼 (이미지 바로 아래 붙임)
+                btn_label = "✅ 선택됨" if is_sel else "○ 선택"
+                btn_type  = "primary" if is_sel else "secondary"
+                st.markdown('<div class="sel-btn">', unsafe_allow_html=True)
+                if st.button(btn_label,
                              key=f"img_{st.session_state.quiz_idx}_{i}",
                              use_container_width=True,
                              type=btn_type):
@@ -266,9 +203,6 @@ if not st.session_state.complete:
                      disabled=(img_sel is None)):
             process_answer(img_sel)
 
-    # ══════════════════════════════════════
-    # 텍스트 퀴즈
-    # ══════════════════════════════════════
     else:
         cur = st.session_state.txt_chosen
         col1, col2 = st.columns(2)
