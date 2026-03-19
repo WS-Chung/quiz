@@ -3,6 +3,7 @@ import time
 import base64
 import io
 from PIL import Image
+from st_clickable_images import clickable_images
 
 st.set_page_config(page_title="정연이 정우 퀴즈풀기", page_icon="⭐", layout="centered")
 
@@ -56,34 +57,7 @@ st.markdown("""
 iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important; transform-origin: center center !important;
 }
-
-/* ── 이미지 카드: 클릭 가능한 label로 감쌈 ── */
-.img-card-label {
-    display: block;
-    cursor: pointer;
-    border-radius: 14px;
-    overflow: hidden;
-    border: 3px solid #d0d0d0;
-    background: #f8f8f8;
-    transition: border-color 0.15s, box-shadow 0.15s;
-    margin-bottom: 4px;
-}
-.img-card-label:hover { border-color: #667eea; }
-.img-card-label.selected {
-    border: 5px solid #667eea;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
-}
-.img-card-label img {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    object-fit: contain;
-    display: block;
-}
-
-/* radio 완전히 숨김 */
-div[data-testid="stRadio"] { display: none !important; }
-
-/* ── 텍스트 선택지 버튼 ── */
+/* 텍스트 선택지 버튼 */
 button[data-testid="stBaseButton-secondary"],
 button[data-testid="stBaseButton-primary"] {
     height: 110px !important; font-size: 28px !important; font-weight: bold !important;
@@ -156,84 +130,62 @@ if not st.session_state.complete:
         unsafe_allow_html=True)
 
     if current_q['type'] == 'image':
-        img_sel = st.session_state.img_chosen
+        img_sel  = st.session_state.img_chosen
+        qidx     = st.session_state.quiz_idx
         b64_list = [load_b64(fn) for fn in current_q['options']]
 
-        # ── 핵심 구조 ──
-        # 1. st.radio를 CSS로 완전히 숨김 (값 저장 역할만)
-        # 2. 이미지를 <label for="radio_id"> 로 감쌈
-        #    → 이미지 클릭 = label 클릭 = radio 선택 = Streamlit rerun
-        # 3. 선택된 이미지는 보라 테두리
+        # 선택된 이미지 테두리 스타일
+        img_styles = []
+        for i in range(4):
+            if i == img_sel:
+                img_styles.append({
+                    "border": "5px solid #667eea",
+                    "border-radius": "14px",
+                    "box-shadow": "0 0 0 3px rgba(102,126,234,0.2)",
+                    "cursor": "pointer",
+                    "object-fit": "contain",
+                    "background": "#f0f2ff",
+                    "width": "100%",
+                })
+            else:
+                img_styles.append({
+                    "border": "3px solid #d0d0d0",
+                    "border-radius": "14px",
+                    "cursor": "pointer",
+                    "object-fit": "contain",
+                    "background": "#f8f8f8",
+                    "width": "100%",
+                })
 
-        qidx = st.session_state.quiz_idx
-
-        # 숨겨진 radio (0~3 선택)
-        radio_val = st.radio(
-            "img_radio",
-            options=[0, 1, 2, 3],
-            index=img_sel if img_sel is not None else 0,
-            key=f"radio_{qidx}",
-            horizontal=True
+        # clickable_images: 이미지 클릭 → 인덱스 반환 (-1: 미클릭)
+        clicked = clickable_images(
+            b64_list,
+            titles=["", "", "", ""],
+            div_style={
+                "display": "grid",
+                "grid-template-columns": "1fr 1fr",
+                "gap": "12px",
+                "padding": "4px",
+            },
+            img_style={
+                "border": "3px solid #d0d0d0",
+                "border-radius": "14px",
+                "cursor": "pointer",
+                "object-fit": "contain",
+                "background": "#f8f8f8",
+                "width": "100%",
+                "aspect-ratio": "1 / 1",
+            },
+            key=f"clickimg_{qidx}"
         )
 
-        # radio가 처음 로딩될 때 img_chosen=None이면 선택 안 된 상태 유지
-        # radio의 초기값(0)이 자동 선택되는 문제 → sentinel로 구분
-        if img_sel is None:
-            # 아직 아무것도 선택 안 한 상태 → radio 값 무시
-            pass
-        elif radio_val != img_sel:
-            st.session_state.img_chosen = radio_val
-            st.rerun()
-
-        # radio input 의 실제 DOM id 를 알아내기 위해
-        # label for 속성에 radio input id 를 연결해야 함
-        # → Streamlit radio 의 input id 패턴: "radio_{key}-{value}"
-        col1, col2 = st.columns(2)
-        cols = [col1, col2, col1, col2]
-        for i, b64 in enumerate(b64_list):
-            sel_class = "selected" if img_sel == i else ""
-            # radio input id: Streamlit 내부 패턴
-            radio_id = f"radio_{qidx}-{i}"
-            with cols[i]:
-                # label 클릭 → 연결된 radio input 클릭 → Streamlit 값 변경 → rerun
-                st.markdown(f"""
-                <label for="{radio_id}" class="img-card-label {sel_class}">
-                    <img src="{b64}" />
-                </label>
-                """, unsafe_allow_html=True)
-
-        # radio 클릭 감지: radio_val 변화 → img_chosen 업데이트
-        if radio_val != img_sel and img_sel is not None:
-            st.session_state.img_chosen = radio_val
-            st.rerun()
-
-        # 이미지 클릭 후 img_chosen=None 상태에서 label 클릭하면
-        # radio_val이 0이 되는데, 이걸 최초 선택으로 인식해야 함
-        # → JS로 radio 변경 이벤트 감지해서 img_chosen 초기화
-        st.markdown(f"""
-        <script>
-        (function() {{
-            // radio 변경 시 img_chosen 을 None에서 업데이트하기 위해
-            // Streamlit이 자동으로 rerun하므로 별도 처리 불필요
-            // label 클릭 → radio change → Streamlit rerun → img_chosen 갱신
-            var radios = window.parent.document.querySelectorAll(
-                'input[type="radio"][name]'
-            );
-        }})();
-        </script>
-        """, unsafe_allow_html=True)
-
-        # img_chosen이 None일 때 label 클릭 → radio_val=0 이 되는 경우 처리
-        if img_sel is None and radio_val == 0:
-            # 처음 로딩인지 클릭인지 구분 불가 → 확인 버튼 비활성으로 안전 처리
-            pass
-        elif img_sel is None and radio_val != 0:
-            st.session_state.img_chosen = radio_val
+        # 클릭된 이미지가 있으면 선택 업데이트
+        if clicked > -1 and clicked != img_sel:
+            st.session_state.img_chosen = clicked
             st.rerun()
 
         st.write("")
-        if st.button("✅ 이걸로 할래요!",
-                     key=f"confirm_img_{qidx}",
+        if st.button("✅ 이걸로 할래요!", key=f"confirm_img_{qidx}",
                      use_container_width=True, type="primary",
                      disabled=(img_sel is None)):
             process_answer(img_sel)
@@ -255,8 +207,7 @@ if not st.session_state.complete:
                         st.session_state.txt_chosen = i
                         st.rerun()
         st.write("")
-        if st.button("✅ 이걸로 할래요!",
-                     key=f"confirm_txt_{st.session_state.quiz_idx}",
+        if st.button("✅ 이걸로 할래요!", key=f"confirm_txt_{st.session_state.quiz_idx}",
                      use_container_width=True, type="primary",
                      disabled=(cur is None)):
             process_answer(cur)
