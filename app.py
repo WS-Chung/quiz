@@ -33,7 +33,7 @@ QUIZZES = [
      'correct_index': 2,
      'success': '정우랑 정연이는 딸기 좋아해?', 'failure': '딸기는 빨간색이야~'},
      {'id': 7, 'type': 'image', 'title': '바다에 사는 동물은 누구게?',
-     'options': ['dog.jpg','whale.jpg','squirrel.jpg','eagle.jpg'],
+     'options': ['dog.jpg','whale.jpg','hamster.jpg','eagle.jpg'],
      'correct_index': 1,
      'success': '바다에 가본적 있어?', 'failure': '누가 헤엄을 잘치게 생겼나 잘봐~'},
     {'id': 8, 'type': 'text', 'title': '밖에서 놀고 집에오면 뭐부터 해야할까?',
