@@ -35,7 +35,11 @@ QUIZZES = [
     {'id': 7, 'type': 'text', 'title': '밖에서 놀고 집에오면 뭐부터 해야할까?',
      'options': ['과자 먹기','유튜브 보기','손씻기','춤추기'],
      'correct_index': 2,
-     'success': '딩동댕! 🎉 손을 깨끗이 씻자!', 'failure': '땡! 손 안 씻으면 아야해요!'}
+     'success': '딩동댕! 🎉 손을 깨끗이 씻자!', 'failure': '땡! 손 안 씻으면 아야해요!'},
+    {'id': 8, 'type': 'text', 'title': '이가 아프면 어디에 가야할까요?',
+     'options': ['어린이집','치과','백화점','카페'],
+     'correct_index': 1,
+     'success': '딩동댕! 🎉 치과 가본적 있어?', 'failure': '땡! 이가 아프면 치과에 가야해!'}
 ]
 IMAGE_DIR = "static/images"
 
