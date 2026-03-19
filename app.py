@@ -50,12 +50,6 @@ def load_b64(filename: str) -> str:
     img.save(buf, format="JPEG", quality=90)
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
 
-# ─────────────────────────────────────────
-# CSS
-# 이미지 버튼: background-image로 이미지 표시
-# 텍스트는 color:transparent로 숨김
-# 선택: primary(보라 테두리), 미선택: secondary(회색 테두리)
-# ─────────────────────────────────────────
 st.markdown("""
 <style>
 .main .block-container { max-width: 760px; margin: 0 auto; padding-top: 1rem; }
@@ -63,41 +57,36 @@ iframe[title="st_balloons.balloons"] {
     transform: scale(0.5) !important; transform-origin: center center !important;
 }
 
-/* ── 이미지 컬럼에 있는 버튼: background-image 방식 ── */
-.img-col div[data-testid="stButton"] > button {
+/* ── 이미지 버튼 공통 ── */
+.img-col button[data-testid="stBaseButton-secondary"],
+.img-col button[data-testid="stBaseButton-primary"] {
     width: 100% !important;
     aspect-ratio: 1 / 1 !important;
     height: auto !important;
     min-height: 150px !important;
     border-radius: 14px !important;
+    background-color: #f8f8f8 !important;
     background-size: contain !important;
     background-repeat: no-repeat !important;
     background-position: center !important;
-    background-color: #f8f8f8 !important;
     color: transparent !important;
-    font-size: 0 !important;
-    cursor: pointer !important;
-    transition: border-color 0.15s, box-shadow 0.15s !important;
     padding: 0 !important;
     margin-bottom: 10px !important;
 }
-.img-col div[data-testid="stButton"] > button p {
-    display: none !important;
-}
-/* 미선택: 회색 테두리 */
-.img-col div[data-testid="stButton"] > button[data-testid="stBaseButton-secondary"] {
+.img-col button p { visibility: hidden !important; font-size: 0 !important; }
+
+/* 미선택 */
+.img-col button[data-testid="stBaseButton-secondary"] {
     border: 3px solid #d0d0d0 !important;
     box-shadow: none !important;
 }
-.img-col div[data-testid="stButton"] > button[data-testid="stBaseButton-secondary"]:hover {
+.img-col button[data-testid="stBaseButton-secondary"]:hover {
     border-color: #667eea !important;
-    background-color: #f8f8f8 !important;
 }
-/* 선택됨: 보라 테두리 */
-.img-col div[data-testid="stButton"] > button[data-testid="stBaseButton-primary"] {
+/* 선택됨 */
+.img-col button[data-testid="stBaseButton-primary"] {
     border: 5px solid #667eea !important;
     box-shadow: 0 0 0 3px rgba(102,126,234,0.2) !important;
-    background-color: #f0f2ff !important;
 }
 
 /* ── 텍스트 선택지 버튼 ── */
@@ -178,46 +167,39 @@ if not st.session_state.complete:
         b64_list = [load_b64(fn) for fn in current_q['options']]
         qidx = st.session_state.quiz_idx
 
+        # ── 각 버튼에 background-image를 class명으로 1:1 매핑 ──
+        # .imgbtn-{qidx}-{i} 클래스를 버튼 wrapper div에 붙이고
+        # 해당 클래스 안의 버튼에 background-image CSS 주입
+        for i, b64 in enumerate(b64_list):
+            st.markdown(f"""
+            <style>
+            .imgbtn-{qidx}-{i} button[data-testid="stBaseButton-secondary"],
+            .imgbtn-{qidx}-{i} button[data-testid="stBaseButton-primary"] {{
+                background-image: url("{b64}") !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+
         col1, col2 = st.columns(2)
         cols = [col1, col2, col1, col2]
 
-        # 버튼을 렌더링한 뒤 JS로 background-image 주입
-        # (CSS에서 동적 url() 값을 직접 넣을 수 없으므로)
-        for i, b64 in enumerate(b64_list):
+        for i in range(4):
             btn_type = "primary" if img_sel == i else "secondary"
             with cols[i]:
-                st.markdown('<div class="img-col">', unsafe_allow_html=True)
-                clicked = st.button(
-                    f"img{i}",   # 텍스트는 CSS로 숨김
+                # wrapper div에 고유 클래스 부여 → CSS가 정확히 이 버튼만 타겟
+                st.markdown(
+                    f'<div class="img-col imgbtn-{qidx}-{i}">',
+                    unsafe_allow_html=True
+                )
+                if st.button(
+                    " ",
                     key=f"img_{qidx}_{i}",
                     use_container_width=True,
                     type=btn_type
-                )
-                # JS로 해당 버튼에 background-image 주입
-                st.markdown(f"""
-                <script>
-                (function() {{
-                    var btns = window.parent.document.querySelectorAll(
-                        'button[data-testid="stBaseButton-secondary"], button[data-testid="stBaseButton-primary"]'
-                    );
-                    // key 속성 대신 텍스트 내용으로 버튼 찾기
-                    btns.forEach(function(btn) {{
-                        var p = btn.querySelector('p');
-                        if (p && p.textContent.trim() === 'img{i}') {{
-                            btn.style.backgroundImage = 'url("{b64}")';
-                            btn.style.backgroundSize = 'contain';
-                            btn.style.backgroundRepeat = 'no-repeat';
-                            btn.style.backgroundPosition = 'center';
-                        }}
-                    }});
-                }})();
-                </script>
-                """, unsafe_allow_html=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-
-                if clicked:
+                ):
                     st.session_state.img_chosen = i
                     st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
         st.write("")
         if st.button("✅ 이걸로 할래요!",
