@@ -63,7 +63,11 @@ QUIZZES = [
      {'id':14, 'type': 'image', 'title': '어떤 신호등일 때 길을 건널 거야?',
      'options': ['blue.jpg','green.jpg','red.jpg','orange.jpg'],
      'correct_index': 1,
-     'success': '손도 들고 건널거지?', 'failure': '정답은 초록색이야! 까먹으면 안돼!'}
+     'success': '손도 들고 건널거지?', 'failure': '정답은 초록색이야! 까먹으면 안돼!'},
+     {'id':15, 'type': 'image', 'title': '하늘을 날 수 있는건?',
+     'options': ['airplane.jpg','forkcrane.jpg','car.jpg','train.jpg'],
+     'correct_index': 0,
+     'success': '비행기 타본거 기억나?', 'failure': '얘는 하늘을 날면 큰일나!'}
 ]
 IMAGE_DIR = "static/images"
 
