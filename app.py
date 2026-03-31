@@ -51,7 +51,19 @@ QUIZZES = [
     {'id':11, 'type': 'text', 'title': '눈사람하고 산타할아버지는 언제 볼 수 있지?',
      'options': ['봄','여름','가을','겨울'],
      'correct_index': 3,
-     'success': '겨울에 눈사람 만들어 봤어?', 'failure': '눈사람은 추울 때만 만들 수 있어!'}
+     'success': '겨울에 눈사람 만들어 봤어?', 'failure': '눈사람은 추울 때만 만들 수 있어!'},
+     {'id':12, 'type': 'text', 'title': '가장 위에 있는 층은 몇층이게?',
+     'options': ['1층','3층','4층','6층'],
+     'correct_index': 3,
+     'success': '집이 몇층인지 알아?', 'failure': '숫자가 크면 더 위에있는 층이야!'},
+     {'id':13, 'type': 'text', 'title': '왼손 오른손 손가락을 다합치면 몇 개일까?',
+     'options': ['3개','5개','10개','20개'],
+     'correct_index': 2,
+     'success': '발가락은 몇개게~?', 'failure': '양쪽손을 펴고 잘 봐봐'},
+     {'id':14, 'type': 'image', 'title': '어떤 신호등일 때 길을 건널 거야?',
+     'options': ['blue.jpg','green.jpg','red.jpg','orange.jpg'],
+     'correct_index': 1,
+     'success': '손도 들고 건널거지?', 'failure': '정답은 초록색이야! 까먹으면 안돼!'}
 ]
 IMAGE_DIR = "static/images"
 
