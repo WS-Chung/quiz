@@ -2,11 +2,13 @@ import streamlit as st
 import time
 import base64
 import io
+import random  # 랜덤 추출을 위해 추가
 from PIL import Image
 from st_clickable_images import clickable_images
 
 st.set_page_config(page_title="정연 정우 퀴즈풀기", page_icon="⭐", layout="centered")
 
+# 전체 퀴즈 목록 (앞으로 계속 추가하시면 됩니다!)
 QUIZZES = [
     {'id': 1, 'type': 'image', 'title': '불을 끄는 소방관이 타고 다니는 차는 뭘까?',
      'options': ['police.jpg','119.jpg','kids.jpg','truck.jpg'],
@@ -71,6 +73,15 @@ QUIZZES = [
 ]
 IMAGE_DIR = "static/images"
 
+# ----------------- 추가된 부분 시작 -----------------
+# 퀴즈 목록이 10개가 안 될 경우를 대비해 min(10, len(QUIZZES))로 설정합니다.
+NUM_QUESTIONS = min(10, len(QUIZZES)) 
+
+# 처음 시작할 때 전체 QUIZZES에서 랜덤으로 NUM_QUESTIONS 개수를 뽑아 세션에 저장합니다.
+if 'current_quizzes' not in st.session_state:
+    st.session_state.current_quizzes = random.sample(QUIZZES, NUM_QUESTIONS)
+# ----------------- 추가된 부분 끝 -------------------
+
 for key, val in [('quiz_idx', 0), ('score', 0), ('complete', False),
                  ('img_chosen', None), ('txt_chosen', None)]:
     if key not in st.session_state:
@@ -100,16 +111,12 @@ iframe[title="st_balloons.balloons"] {
     transform-origin: center center !important;
 }
 
-/* form 테두리/패딩 제거 */
 [data-testid="stForm"] {
     border: none !important;
     padding: 0 !important;
     background: transparent !important;
 }
 
-/* form 안의 직계 자식(버튼 4개)을 CSS grid로 2x2 배치
-   st.columns 없이 form_submit_button 4개를 그냥 나열하면
-   Streamlit이 세로로 쌓으므로, 부모 flex/grid를 덮어씀 */
 [data-testid="stForm"] > div:first-child {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
@@ -117,12 +124,10 @@ iframe[title="st_balloons.balloons"] {
     padding: 2px !important;
 }
 
-/* form_submit_button 래퍼 */
 [data-testid="stFormSubmitButton"] {
     width: 100% !important;
 }
 
-/* 버튼 자체: 정사각형 */
 [data-testid="stFormSubmitButton"] > button {
     width: 100% !important;
     aspect-ratio: 1 / 1 !important;
@@ -157,7 +162,6 @@ iframe[title="st_balloons.balloons"] {
     outline: none !important;
 }
 
-/* 다시하기 버튼 */
 button[data-testid="stBaseButton-secondary"] {
     height: 72px !important;
     font-size: clamp(16px, 4vw, 22px) !important;
@@ -206,7 +210,8 @@ button[data-testid="stBaseButton-secondary"]:hover {
 """, unsafe_allow_html=True)
 
 def process_answer(selected_idx: int):
-    current_q = QUIZZES[st.session_state.quiz_idx]
+    # 전체 QUIZZES 대신 랜덤으로 뽑힌 current_quizzes를 사용합니다.
+    current_q = st.session_state.current_quizzes[st.session_state.quiz_idx]
     if selected_idx == current_q['correct_index']:
         st.markdown(f'<div class="result-msg-box correct-box">{current_q["success"]}</div>',
                     unsafe_allow_html=True)
@@ -217,9 +222,12 @@ def process_answer(selected_idx: int):
         st.markdown(f'<div class="result-msg-box error-box">{current_q["failure"]}</div>',
                     unsafe_allow_html=True)
         time.sleep(2)
+        
     st.session_state.img_chosen = None
     st.session_state.txt_chosen = None
-    if st.session_state.quiz_idx < len(QUIZZES) - 1:
+    
+    # 길이가 current_quizzes 기준이 되도록 수정
+    if st.session_state.quiz_idx < len(st.session_state.current_quizzes) - 1:
         st.session_state.quiz_idx += 1
     else:
         st.session_state.complete = True
@@ -233,8 +241,11 @@ st.markdown(
 )
 
 if not st.session_state.complete:
-    current_q = QUIZZES[st.session_state.quiz_idx]
-    st.progress(st.session_state.quiz_idx / len(QUIZZES))
+    # 현재 퀴즈를 세션의 current_quizzes에서 가져옵니다.
+    current_q = st.session_state.current_quizzes[st.session_state.quiz_idx]
+    total_q = len(st.session_state.current_quizzes)
+    
+    st.progress(st.session_state.quiz_idx / total_q)
     st.markdown(
         f"<p style='text-align:center;font-weight:bold;"
         f"font-size:clamp(13px,4vw,19px);margin:4px 0 8px 0;'>"
@@ -270,8 +281,6 @@ if not st.session_state.complete:
             process_answer(clicked)
 
     else:
-        # st.columns 없이 form_submit_button 4개를 나열
-        # CSS가 부모 div를 grid로 만들어서 자동 2x2 배치
         with st.form(key=f"txtform_{qidx}", border=False):
             s0 = st.form_submit_button(current_q['options'][0], use_container_width=True)
             s1 = st.form_submit_button(current_q['options'][1], use_container_width=True)
@@ -293,10 +302,12 @@ else:
                 정말 잘했어! 얘들아!</div>
             <div class="result-text"
                  style="font-size:clamp(18px,6vw,38px);color:#667eea;margin-top:10px;">
-                🌟 {len(QUIZZES)}문제 중 {st.session_state.score}개 정답! 🌟
+                🌟 {len(st.session_state.current_quizzes)}문제 중 {st.session_state.score}개 정답! 🌟
             </div>
         </div>
     """, unsafe_allow_html=True)
+    
+    # 다시하기 버튼을 누르면 새로운 10개의 문제를 다시 뽑도록 갱신합니다.
     if st.button("처음부터 다시 할래", key="restart",
                  use_container_width=True, type="secondary"):
         st.session_state.quiz_idx   = 0
@@ -304,4 +315,6 @@ else:
         st.session_state.complete   = False
         st.session_state.img_chosen = None
         st.session_state.txt_chosen = None
+        # 다시하기 클릭 시 새로운 랜덤 문제 세트 구성
+        st.session_state.current_quizzes = random.sample(QUIZZES, NUM_QUESTIONS)
         st.rerun()
