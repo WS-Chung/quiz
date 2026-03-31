@@ -50,7 +50,7 @@ QUIZZES = [
      'success': '거미 다리가 몇개인지도 알아?', 'failure': '다시 잘 생각해 보자!'},
     {'id':11, 'type': 'text', 'title': '눈사람하고 산타할아버지는 언제 볼 수 있지?',
      'options': ['봄','여름','가을','겨울'],
-     'correct_index': 0,
+     'correct_index': 3,
      'success': '겨울에 눈사람 만들어 봤어?', 'failure': '눈사람은 추울 때만 만들 수 있어!'}
 ]
 IMAGE_DIR = "static/images"
