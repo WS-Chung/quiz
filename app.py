@@ -93,7 +93,12 @@ QUIZZES = [
     {'id':17, 'type': 'image', 'title': '뭘 많이 먹어야 튼튼해질까?',
      'options': ['mychu.jpg','broccoli.jpg','malangcow.jpg','homerunball.jpg'],
      'correct_index': 1,
-     'success': '브로콜리 잘 먹을 수 있어?', 'failure': '과자는 아주 조금씩만 먹어야돼!'}
+     'success': '브로콜리 잘 먹을 수 있어?', 'failure': '과자는 아주 조금씩만 먹어야돼!'},
+
+    {'id':18, 'type': 'image', 'title': '여기서 제일 큰 공은 뭐게?',
+     'options': ['golf.jpg','baseball.jpg','football.jpg','basketball.jpg'],
+     'correct_index': 3,
+     'success': '농구공 손으로 들 수 있어?', 'failure': '본 적 없어? 잘 기억해봐봐!'}
 ]
 IMAGE_DIR = "static/images"
 
