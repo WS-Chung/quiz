@@ -40,7 +40,7 @@ QUIZZES = [
      'correct_index': 2,
      'success': '정우랑 정연이는 바나나 좋아해?', 'failure': 'Yellow는 노란색이란 뜻이야~'},
     
-     {'id': 7, 'type': 'image', 'title': '바다에 사는 동물은 누구게?',
+    {'id': 7, 'type': 'image', 'title': '바다에 사는 동물은 누구게?',
      'options': ['dog.jpg','whale.jpg','hamster.jpg','eagle.jpg'],
      'correct_index': 1,
      'success': '바다에 가본적 있어?', 'failure': '누가 헤엄을 잘치게 생겼나 잘봐~'},
@@ -65,27 +65,27 @@ QUIZZES = [
      'correct_index': 3,
      'success': '겨울에 눈사람 만들어 봤어?', 'failure': '눈사람은 추울 때만 만들 수 있어!'},
     
-     {'id':12, 'type': 'text', 'title': '가장 위에 있는 층은 몇층이게?',
+    {'id':12, 'type': 'text', 'title': '가장 위에 있는 층은 몇층이게?',
      'options': ['1층','3층','4층','6층'],
      'correct_index': 3,
      'success': '집이 몇층인지 알아?', 'failure': '숫자가 크면 더 위에있는 층이야!'},
     
-     {'id':13, 'type': 'text', 'title': '왼손 오른손 손가락을 다합치면 몇 개일까?',
+    {'id':13, 'type': 'text', 'title': '왼손 오른손 손가락을 다합치면 몇 개일까?',
      'options': ['3개','5개','10개','20개'],
      'correct_index': 2,
      'success': '발가락은 몇개게~?', 'failure': '양쪽손을 펴고 잘 봐봐'},
     
-     {'id':14, 'type': 'image', 'title': '어떤 신호등일 때 길을 건널 거야?',
+    {'id':14, 'type': 'image', 'title': '어떤 신호등일 때 길을 건널 거야?',
      'options': ['blue.jpg','green.jpg','red.jpg','orange.jpg'],
      'correct_index': 1,
      'success': '손도 들고 건널거지?', 'failure': '정답은 초록색이야! 까먹으면 안돼!'},
     
-     {'id':15, 'type': 'image', 'title': '하늘을 날 수 있는건?',
+    {'id':15, 'type': 'image', 'title': '하늘을 날 수 있는건?',
      'options': ['airplane.jpg','forkcrane.jpg','car.jpg','train.jpg'],
      'correct_index': 0,
      'success': '비행기 타본거 기억나?', 'failure': '얘는 하늘을 날면 큰일나!'},
     
-     {'id':16, 'type': 'text', 'title': '맛있는 과자가 생기면?',
+    {'id':16, 'type': 'text', 'title': '맛있는 과자가 생기면?',
      'options': ['정우가 다 먹기','정연이가 다 먹기','가족들이랑 나눠먹기','엄마아빠 몰래 숨기기'],
      'correct_index': 2,
      'success': '사이좋게 먹을거지?', 'failure': '그럼 안된다구~'},
