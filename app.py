@@ -10,12 +10,12 @@ st.set_page_config(page_title="정연 정우 퀴즈풀기", page_icon="⭐", lay
 
 # 전체 퀴즈 목록 (앞으로 계속 추가하시면 됩니다!)
 QUIZZES = [
-    {'id': 1, 'type': 'image', 'title': '불을 끄는 소방관이 타고 다니는 차는 뭘까?',
+    {'id': 1, 'type': 'image', 'title': '불을 끄는 소방관이 타는 차는 뭘까?',
      'options': ['police.jpg','119.jpg','kids.jpg','truck.jpg'],
      'correct_index': 1,
      'success': '딩동댕! 소방차 본적 있어?', 'failure': '소방차는 빨간색이야!'},
     
-    {'id': 2, 'type': 'image', 'title': '이 중에 왕자핑이 누구~게?',
+    {'id': 2, 'type': 'image', 'title': '왕자핑이 누구~게?',
      'options': ['princeping.jpg','auroraping.jpg','heartsping.jpg','fixping.jpg'],
      'correct_index': 0,
      'success': '날 알아봐줘서 고마워', 'failure': '땡! 왕자핑은 하얀색이야!'},
@@ -25,12 +25,12 @@ QUIZZES = [
      'correct_index': 3,
      'success': '맞았어! 차 이름도 알아?', 'failure': '다 비슷하게 생겨서 어렵지?'},
     
-    {'id': 4, 'type': 'text', 'title': '아빠의 엄마는 누구~게?',
+    {'id': 4, 'type': 'text', 'title': '아빠의 엄마는 누구~?',
      'options': ['송도할머니','수지할머니','이모','돌봄선생님'],
      'correct_index': 0,
      'success': '딩동댕! 잘 생각했어', 'failure': '아빠가 누구를 부를때 엄마~ 하시지?'},
     
-    {'id': 5, 'type': 'text', 'title': '엄마의 아빠는 누구~게?',
+    {'id': 5, 'type': 'text', 'title': '엄마의 아빠는 누구~?',
      'options': ['송도할아버지','수지할아버지','깜깜아저씨','고모부'],
      'correct_index': 1,
      'success': '맞았어! 똑똑해~', 'failure': '엄마가 누구를 부를때 아빠~ 하시지??'},
@@ -50,7 +50,7 @@ QUIZZES = [
      'correct_index': 2,
      'success': '얘들아~ 손 잘 씻고 있지?', 'failure': '손 안씻으면 아야~한다구'},
     
-    {'id': 9, 'type': 'text', 'title': '이가 아프면 어디에 가야할까요?',
+    {'id': 9, 'type': 'text', 'title': '이가 아플 때는 어디로 가면 돼?',
      'options': ['어린이집','치과','백화점','카페'],
      'correct_index': 1,
      'success': '딩동댕! 치과 가본적 있어?', 'failure': '이가 아프면 치과에 가야해!'},
@@ -60,7 +60,7 @@ QUIZZES = [
      'correct_index': 2,
      'success': '거미 다리가 몇개인지도 알아?', 'failure': '다시 잘 생각해 보자!'},
     
-    {'id':11, 'type': 'text', 'title': '눈사람하고 산타할아버지는 언제 볼 수 있지?',
+    {'id':11, 'type': 'text', 'title': '눈사람하고 산타할아버지는 언제 볼 수 있을까?',
      'options': ['봄','여름','가을','겨울'],
      'correct_index': 3,
      'success': '겨울에 눈사람 만들어 봤어?', 'failure': '눈사람은 추울 때만 만들 수 있어!'},
@@ -98,7 +98,17 @@ QUIZZES = [
     {'id':18, 'type': 'image', 'title': '여기서 제일 큰 공은 뭐게?',
      'options': ['golf.jpg','baseball.jpg','football.jpg','basketball.jpg'],
      'correct_index': 3,
-     'success': '농구공 손으로 들 수 있어?', 'failure': '본 적 없어? 잘 기억해봐봐!'}
+     'success': '농구공 손으로 들 수 있어?', 'failure': '본 적 없어? 잘 기억해봐봐!'},
+
+    {'id': 19, 'type': 'text', 'title': '헤어질 때 하는 영어 인사는?',
+     'options': ['Hello','Thank you','Sorry','Bye Bye'],
+     'correct_index': 3,
+     'success': '영어로 내일 또봐~ 가 뭔지도 알아?', 'failure': '땡! 빠이빠이~'},
+
+    {'id': 20, 'type': 'text', 'title': '초등학교는 몇살에 가는거야? ',
+     'options': ['6살','7살','8살','9살'],
+     'correct_index': 2,
+     'success': '학교에 빨리 가고 싶어?', 'failure': '두 살더 먹으면 돼!'}
 ]
 IMAGE_DIR = "static/images"
 
