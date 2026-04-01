@@ -77,7 +77,7 @@ QUIZZES = [
     {'id':17, 'type': 'image', 'title': '뭘 많이 먹어야 튼튼해질까?',
      'options': ['mychu.jpg','broccoli.jpg','malangcow.jpg','homerunball.jpg'],
      'correct_index': 1,
-     'success': '브로콜리 잘 먹을 수 있어?', 'failure': '과자는 아주 조금씩만 먹어야돼!'},
+     'success': '브로콜리 잘 먹을 수 있어?', 'failure': '과자는 아주 조금씩만 먹어야돼!'}
 ]
 IMAGE_DIR = "static/images"
 
