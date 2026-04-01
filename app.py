@@ -100,15 +100,20 @@ QUIZZES = [
      'correct_index': 3,
      'success': '농구공 손으로 들 수 있어?', 'failure': '본 적 없어? 잘 기억해봐봐!'},
 
-    {'id': 19, 'type': 'text', 'title': '헤어질 때 하는 영어 인사는?',
+    {'id':19, 'type': 'text', 'title': '헤어질 때 하는 영어 인사는?',
      'options': ['Hello','Thank you','Sorry','Bye Bye'],
      'correct_index': 3,
      'success': '영어로 내일 또봐~ 가 뭔지도 알아?', 'failure': '땡! 빠이빠이~'},
 
-    {'id': 20, 'type': 'text', 'title': '초등학교는 몇살에 가는거야? ',
+    {'id':20, 'type': 'text', 'title': '초등학교는 몇살에 가는거야? ',
      'options': ['6살','7살','8살','9살'],
      'correct_index': 2,
-     'success': '학교에 빨리 가고 싶어?', 'failure': '두 살더 먹으면 돼!'}
+     'success': '학교에 빨리 가고 싶어?', 'failure': '두 살더 먹으면 돼!'},
+
+    {'id':21, 'type': 'image', 'title': '밥 먹을 때 꼭 필요한건?',
+     'options': ['spoon.jpg','phone.jpg','scissor.jpg','brush.jpg'],
+     'correct_index': 0,
+     'success': '손으로 먹는건 아니지?', 'failure': '이건 없어도 괜찮아~'}
 ]
 IMAGE_DIR = "static/images"
 
