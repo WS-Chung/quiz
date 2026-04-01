@@ -69,7 +69,11 @@ QUIZZES = [
      {'id':15, 'type': 'image', 'title': '하늘을 날 수 있는건?',
      'options': ['airplane.jpg','forkcrane.jpg','car.jpg','train.jpg'],
      'correct_index': 0,
-     'success': '비행기 타본거 기억나?', 'failure': '얘는 하늘을 날면 큰일나!'}
+     'success': '비행기 타본거 기억나?', 'failure': '얘는 하늘을 날면 큰일나!'},
+     {'id':16, 'type': 'text', 'title': '맛있는 과자가 생기면?',
+     'options': ['정우가 다 먹기','정연이가 다 먹기','가족들이랑 나눠먹기','엄마아빠 몰래 숨기기'],
+     'correct_index': 2,
+     'success': '사이좋게 먹을거지?', 'failure': '그럼 안된다구~'}
 ]
 IMAGE_DIR = "static/images"
 
