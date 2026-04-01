@@ -113,7 +113,12 @@ QUIZZES = [
     {'id':21, 'type': 'image', 'title': '밥 먹을 때 꼭 필요한건?',
      'options': ['spoon.jpg','phone.jpg','scissor.jpg','brush.jpg'],
      'correct_index': 0,
-     'success': '손으로 먹는건 아니지?', 'failure': '이건 없어도 괜찮아~'}
+     'success': '손으로 먹는건 아니지?', 'failure': '이건 없어도 괜찮아~'},
+
+    {'id':22, 'type': 'image', 'title': '틀린 그림을 찾아봐',
+     'options': ['sanrio.jpg','sanrio.jpg','sanrio_fault.jpg','sanrio.jpg'],
+     'correct_index': 2,
+     'success': '어디어디가 달랐어?', 'failure': '한 장만 그림이 달라, 잘봐봐!'},
 ]
 IMAGE_DIR = "static/images"
 
