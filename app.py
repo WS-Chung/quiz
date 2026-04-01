@@ -14,66 +14,82 @@ QUIZZES = [
      'options': ['police.jpg','119.jpg','kids.jpg','truck.jpg'],
      'correct_index': 1,
      'success': '딩동댕! 소방차 본적 있어?', 'failure': '소방차는 빨간색이야!'},
+    
     {'id': 2, 'type': 'image', 'title': '이 중에 왕자핑이 누구~게?',
      'options': ['princeping.jpg','auroraping.jpg','heartsping.jpg','fixping.jpg'],
      'correct_index': 0,
      'success': '날 알아봐줘서 고마워', 'failure': '땡! 왕자핑은 하얀색이야!'},
+    
     {'id': 3, 'type': 'image', 'title': '아빠차를 찾아봐!',
      'options': ['tucson.jpg','koleos.jpg','gwagon.jpg','sorrento.jpg'],
      'correct_index': 3,
      'success': '맞았어! 차 이름도 알아?', 'failure': '다 비슷하게 생겨서 어렵지?'},
+    
     {'id': 4, 'type': 'text', 'title': '아빠의 엄마는 누구~게?',
      'options': ['송도할머니','수지할머니','이모','돌봄선생님'],
      'correct_index': 0,
      'success': '딩동댕! 잘 생각했어', 'failure': '아빠가 누구를 부를때 엄마~ 하시지?'},
+    
     {'id': 5, 'type': 'text', 'title': '엄마의 아빠는 누구~게?',
      'options': ['송도할아버지','수지할아버지','깜깜아저씨','고모부'],
      'correct_index': 1,
      'success': '맞았어! 똑똑해~', 'failure': '엄마가 누구를 부를때 아빠~ 하시지??'},
+    
     {'id': 6, 'type': 'image', 'title': 'Which One is Yellow?',
      'options': ['apple.jpg','grape.jpg','banana.jpg','strawberry.jpg'],
      'correct_index': 2,
      'success': '정우랑 정연이는 바나나 좋아해?', 'failure': 'Yellow는 노란색이란 뜻이야~'},
+    
      {'id': 7, 'type': 'image', 'title': '바다에 사는 동물은 누구게?',
      'options': ['dog.jpg','whale.jpg','hamster.jpg','eagle.jpg'],
      'correct_index': 1,
      'success': '바다에 가본적 있어?', 'failure': '누가 헤엄을 잘치게 생겼나 잘봐~'},
+    
     {'id': 8, 'type': 'text', 'title': '밖에서 놀고 집에오면 뭐부터 해야할까?',
      'options': ['과자 먹기','유튜브 보기','손씻기','춤추기'],
      'correct_index': 2,
      'success': '얘들아~ 손 잘 씻고 있지?', 'failure': '손 안씻으면 아야~한다구'},
+    
     {'id': 9, 'type': 'text', 'title': '이가 아프면 어디에 가야할까요?',
      'options': ['어린이집','치과','백화점','카페'],
      'correct_index': 1,
      'success': '딩동댕! 치과 가본적 있어?', 'failure': '이가 아프면 치과에 가야해!'},
+    
     {'id':10, 'type': 'text', 'title': '이 중에서 누구 다리가 제일 많게~?',
      'options': ['참새','고양이','거미','돌고래'],
      'correct_index': 2,
      'success': '거미 다리가 몇개인지도 알아?', 'failure': '다시 잘 생각해 보자!'},
+    
     {'id':11, 'type': 'text', 'title': '눈사람하고 산타할아버지는 언제 볼 수 있지?',
      'options': ['봄','여름','가을','겨울'],
      'correct_index': 3,
      'success': '겨울에 눈사람 만들어 봤어?', 'failure': '눈사람은 추울 때만 만들 수 있어!'},
+    
      {'id':12, 'type': 'text', 'title': '가장 위에 있는 층은 몇층이게?',
      'options': ['1층','3층','4층','6층'],
      'correct_index': 3,
      'success': '집이 몇층인지 알아?', 'failure': '숫자가 크면 더 위에있는 층이야!'},
+    
      {'id':13, 'type': 'text', 'title': '왼손 오른손 손가락을 다합치면 몇 개일까?',
      'options': ['3개','5개','10개','20개'],
      'correct_index': 2,
      'success': '발가락은 몇개게~?', 'failure': '양쪽손을 펴고 잘 봐봐'},
+    
      {'id':14, 'type': 'image', 'title': '어떤 신호등일 때 길을 건널 거야?',
      'options': ['blue.jpg','green.jpg','red.jpg','orange.jpg'],
      'correct_index': 1,
      'success': '손도 들고 건널거지?', 'failure': '정답은 초록색이야! 까먹으면 안돼!'},
+    
      {'id':15, 'type': 'image', 'title': '하늘을 날 수 있는건?',
      'options': ['airplane.jpg','forkcrane.jpg','car.jpg','train.jpg'],
      'correct_index': 0,
      'success': '비행기 타본거 기억나?', 'failure': '얘는 하늘을 날면 큰일나!'},
+    
      {'id':16, 'type': 'text', 'title': '맛있는 과자가 생기면?',
      'options': ['정우가 다 먹기','정연이가 다 먹기','가족들이랑 나눠먹기','엄마아빠 몰래 숨기기'],
      'correct_index': 2,
      'success': '사이좋게 먹을거지?', 'failure': '그럼 안된다구~'},
+    
     {'id':17, 'type': 'image', 'title': '뭘 많이 먹어야 튼튼해질까?',
      'options': ['mychu.jpg','broccoli.jpg','malangcow.jpg','homerunball.jpg'],
      'correct_index': 1,
