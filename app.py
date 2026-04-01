@@ -119,6 +119,11 @@ QUIZZES = [
      'options': ['sanrio.jpg','sanrio.jpg','sanrio_fault.jpg','sanrio.jpg'],
      'correct_index': 2,
      'success': '어디어디가 달랐어?', 'failure': '한 장만 그림이 달라, 잘봐봐!'},
+
+    {'id': 23, 'type': 'text', 'title': '횡단보도를 건널 때는 어떻게?',
+     'options': ['빨리 뛰어가기','손을 들고 건너기','거꾸로 걸어가기','춤추면서 건너기'],
+     'correct_index': 1,
+     'success': '차를 잘 보고 손을 들면 돼', 'failure': '횡단보도에선 장난치면 안돼~'}
 ]
 IMAGE_DIR = "static/images"
 
