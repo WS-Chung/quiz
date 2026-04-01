@@ -73,7 +73,11 @@ QUIZZES = [
      {'id':16, 'type': 'text', 'title': '맛있는 과자가 생기면?',
      'options': ['정우가 다 먹기','정연이가 다 먹기','가족들이랑 나눠먹기','엄마아빠 몰래 숨기기'],
      'correct_index': 2,
-     'success': '사이좋게 먹을거지?', 'failure': '그럼 안된다구~'}
+     'success': '사이좋게 먹을거지?', 'failure': '그럼 안된다구~'},
+    {'id':17, 'type': 'image', 'title': '뭘 많이 먹어야 튼튼해질까?',
+     'options': ['mychu.jpg','broccoli.jpg','malangcow.jpg','homerunball.jpg'],
+     'correct_index': 1,
+     'success': '브로콜리 잘 먹을 수 있어?', 'failure': '과자는 아주 조금씩만 먹어야돼!'},
 ]
 IMAGE_DIR = "static/images"
 
